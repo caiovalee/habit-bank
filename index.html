@@ -151,7 +151,7 @@ input,button{font-family:inherit}
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">contadores de dias</div>
     <div id="edit-counters"></div>
     <div style="display:grid;grid-template-columns:1fr 56px auto;gap:6px;margin-top:8px;align-items:center">
-      <input id="ncl" placeholder="Nome do contador (ex: Dias sem álcool)" style="font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <input id="ncl" placeholder="Nome do contador (ex: academia)" style="font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
       <input id="nce" placeholder="📅" style="font-size:14px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);text-align:center"/>
       <button onclick="addCounter()" style="font-size:12px;padding:7px 12px;background:var(--color-background-info);color:var(--color-text-info);border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap">+ add</button>
     </div>
@@ -160,6 +160,14 @@ input,button{font-family:inherit}
 </div>
 
 <div id="panel-receipt" style="display:none">
+  <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <label style="font-size:11px;color:var(--color-text-secondary)">De</label>
+    <input id="rcpFrom" type="date" style="font-size:12px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)">
+    <label style="font-size:11px;color:var(--color-text-secondary)">Até</label>
+    <input id="rcpTo" type="date" style="font-size:12px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)">
+    <button onclick="rcpClear()" style="font-size:11px;padding:5px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)">Limpar</button>
+    <button onclick="rcpExport()" style="font-size:11px;padding:5px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)">↓ Exportar período</button>
+  </div>
   <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden">
     <div style="padding:16px 18px;border-bottom:0.5px solid var(--color-border-tertiary);text-align:center">
       <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Extrato</div>
@@ -518,17 +526,36 @@ function render(){
   setTab(tab,true);
 }
 
+function txDateISO(t){
+  const datePart=String(t.date||'').split(',')[0].trim().split(' ')[0];
+  const [d,m,y]=datePart.split('/');
+  return (y&&m&&d)?`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`:'';
+}
+
+function getFilteredTxs(){
+  const from=document.getElementById('rcpFrom')?.value||'';
+  const to=document.getElementById('rcpTo')?.value||'';
+  if(!from&&!to) return {txs:S.transactions,filtered:false,from,to};
+  const txs=S.transactions.filter(t=>{
+    const iso=txDateISO(t);
+    if(from&&iso<from) return false;
+    if(to&&iso>to) return false;
+    return true;
+  });
+  return {txs,filtered:true,from,to};
+}
+
 function renderReceipt(){
   const today=fmtDateShort(new Date());
   document.getElementById("receipt-date").textContent=`Impresso em ${today}`;
-  const txs=S.transactions;
+  const {txs,filtered}=getFilteredTxs();
   if(txs.length===0){
-    document.getElementById("receipt-body").innerHTML=`<div style="padding:20px;text-align:center;font-size:12px;color:var(--color-text-secondary)">Nenhuma movimentação ainda</div>`;
+    document.getElementById("receipt-body").innerHTML=`<div style="padding:20px;text-align:center;font-size:12px;color:var(--color-text-secondary)">${filtered?'Nenhuma movimentação no período':'Nenhuma movimentação ainda'}</div>`;
     document.getElementById("receipt-footer").innerHTML="";
     return;
   }
-  // ensure all have ids
-  txs.forEach(t=>{if(!t.id)t.id=uid()});
+  // ensure all have ids (em S.transactions, não só nas filtradas)
+  S.transactions.forEach(t=>{if(!t.id)t.id=uid()});
   const icons={win:"✅",fail:"❌",interest:"📈",loan:"💸"};
   const grouped={};
   txs.forEach(t=>{
@@ -558,13 +585,17 @@ function renderReceipt(){
   const wins=txs.filter(t=>t.type==="win").reduce((a,t)=>a+t.amount,0);
   const fails=txs.filter(t=>t.type==="fail").reduce((a,t)=>a+t.amount,0);
   const interest=txs.filter(t=>t.type==="interest").reduce((a,t)=>a+t.amount,0);
+  const net=wins+fails+interest;
   const balCol=S.balance>0?"#16a34a":S.balance<0?"#dc2626":"var(--color-text-primary)";
+  const netCol=net>0?"#16a34a":net<0?"#dc2626":"var(--color-text-primary)";
+  const sufx=filtered?" no período":"";
   document.getElementById("receipt-footer").innerHTML=`
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Conquistas</span><span style="color:#16a34a">+R$${fmtMoney(wins)}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Falhas</span><span style="color:#dc2626">-R$${fmtMoney(Math.abs(fails))}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"><span>Juros acumulados</span><span style="color:#d97706">+R$${fmtMoney(interest)}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:500;color:var(--color-text-primary);border-top:0.5px solid var(--color-border-primary);padding-top:10px"><span>Saldo atual</span><span style="color:${balCol}">R$${fmtMoney(S.balance)}</span></div>
-    <div style="font-size:10px;color:var(--color-text-secondary);margin-top:6px;text-align:center">${txs.length} movimentações registradas</div>`;
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Conquistas${sufx}</span><span style="color:#16a34a">+R$${fmtMoney(wins)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Falhas${sufx}</span><span style="color:#dc2626">-R$${fmtMoney(Math.abs(fails))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"><span>Juros${sufx}</span><span style="color:#d97706">+R$${fmtMoney(interest)}</span></div>
+    ${filtered?`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px"><span>Líquido do período</span><span style="color:${netCol}">${net>=0?'+':'-'}R$${fmtMoney(Math.abs(net))}</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:500;color:var(--color-text-primary);border-top:0.5px solid var(--color-border-primary);padding-top:10px"><span>Saldo atual do cofrinho</span><span style="color:${balCol}">R$${fmtMoney(S.balance)}</span></div>
+    <div style="font-size:10px;color:var(--color-text-secondary);margin-top:6px;text-align:center">${txs.length} ${filtered?'movimentações no período':'movimentações registradas'}</div>`;
 }
 
 window.setTab=function(t){
@@ -784,8 +815,60 @@ window.clearSync=function(){
   closeSync();
 };
 
+window.rcpClear=function(){
+  document.getElementById('rcpFrom').value='';
+  document.getElementById('rcpTo').value='';
+  renderReceipt();
+};
+
+window.rcpExport=function(){
+  const {txs,filtered,from,to}=getFilteredTxs();
+  if(!txs.length){alert('Nenhuma movimentação no período selecionado.');return}
+  const wins=txs.filter(t=>t.type==="win").reduce((a,t)=>a+t.amount,0);
+  const fails=txs.filter(t=>t.type==="fail").reduce((a,t)=>a+t.amount,0);
+  const interest=txs.filter(t=>t.type==="interest").reduce((a,t)=>a+t.amount,0);
+  const net=wins+fails+interest;
+  const fmtIso=iso=>iso?iso.split('-').reverse().join('/'):null;
+  const periodo=filtered?`${fmtIso(from)||'início'} → ${fmtIso(to)||'hoje'}`:'todas as movimentações';
+  let txt='EXTRATO DO COFRINHO\n';
+  txt+=`Período: ${periodo}\n`;
+  txt+=`Gerado em: ${fmtDate(new Date())}\n`;
+  txt+='\n'+'='.repeat(56)+'\n\n';
+  const grouped={};
+  txs.forEach(t=>{const day=String(t.date||'').split(',')[0].trim();(grouped[day]=grouped[day]||[]).push(t)});
+  const icons={win:'✓',fail:'✗',interest:'%',loan:'$'};
+  Object.entries(grouped).forEach(([day,items])=>{
+    txt+=`${day}\n`;
+    items.forEach(t=>{
+      const sign=t.amount>=0?'+':'-';
+      const amt=`${sign}R$${fmtMoney(Math.abs(t.amount))}`.padStart(11);
+      txt+=`  [${icons[t.type]||'·'}] ${amt}  ${t.label}\n`;
+    });
+    txt+='\n';
+  });
+  txt+='='.repeat(56)+'\n';
+  txt+='RESUMO\n';
+  txt+=`  Conquistas:    +R$${fmtMoney(wins).padStart(10)}  (${txs.filter(t=>t.type==='win').length})\n`;
+  txt+=`  Falhas:        -R$${fmtMoney(Math.abs(fails)).padStart(10)}  (${txs.filter(t=>t.type==='fail').length})\n`;
+  txt+=`  Juros:         +R$${fmtMoney(interest).padStart(10)}  (${txs.filter(t=>t.type==='interest').length})\n`;
+  txt+=`  ${'─'.repeat(40)}\n`;
+  txt+=`  Líquido:       ${net>=0?'+':'-'}R$${fmtMoney(Math.abs(net)).padStart(10)}\n`;
+  txt+=`  Movimentações: ${txs.length}\n`;
+  txt+=`\nSaldo atual do cofrinho: R$${fmtMoney(S.balance)}\n`;
+  const tag=filtered?`${(from||'inicio').replace(/-/g,'')}_${(to||'hoje').replace(/-/g,'')}`:'completo';
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`extrato_${tag}.txt`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 setTab("actions");
-load();
+load().then(()=>{
+  document.getElementById('rcpFrom')?.addEventListener('change',renderReceipt);
+  document.getElementById('rcpTo')?.addEventListener('change',renderReceipt);
+});
 })();
 </script>
 </body>
