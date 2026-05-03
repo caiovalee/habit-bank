@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semiannual Sprint</title>
+<style>
+:root{
+  --bg:#0f1220; --panel:#171a2b; --muted:#9aa3b2; --text:#e8ecf5;
+  --accent:#6ee7b7; --accent2:#60a5fa; --danger:#f87171; --warn:#fbbf24;
+  --card:#1e2338; --border:#2b3151;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+     background: radial-gradient(120% 80% at 100% 10%,#112033 0%,transparent 60%),
+                 radial-gradient(90% 80% at 0% 100%,#182036 0%,transparent 60%),
+                 var(--bg); color:var(--text)}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,rgba(15,18,32,.95),rgba(15,18,32,.8));
+       backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--border)}
+.wrap{max-width:1200px;margin:0 auto;padding:14px}
+.row{display:flex;gap:8px;align-items:center}
+.row-between{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.btn{padding:8px 12px;border:1px solid var(--border);background:#0f1427;color:var(--text);border-radius:12px;cursor:pointer;font-family:inherit;font-size:14px}
+.btn.primary{background:#1d3a2d;border-color:#264e3c}
+.btn.warn{background:#3a2a18;border-color:#574125}
+.btn.ghost{background:transparent}
+.btn.small{padding:5px 9px;font-size:12px;border-radius:8px}
+select,input,textarea{background:#0e1426;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px;font-family:inherit}
+h1{margin:0}
+.topnav{display:flex;gap:6px;padding:8px 14px;background:#0a0d1a;border-bottom:1px solid var(--border)}
+.topnav a{padding:6px 14px;color:var(--muted);text-decoration:none;border-radius:8px;font-size:14px}
+.topnav a.active{background:var(--card);color:var(--text)}
+.topnav a:hover{color:var(--text)}
+main .wrap{display:grid;grid-template-columns:1fr;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px}
+.kanban{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:14px}
+@media (min-width:900px){.kanban{grid-template-columns:repeat(4,1fr)}}
+.col{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;min-height:200px}
+.col h4{margin:0 0 8px 0;color:var(--muted)}
+.dropzone{display:flex;flex-direction:column;gap:8px;min-height:160px}
+.task{background:#121a2f;border:1px solid var(--border);border-radius:12px;padding:10px;cursor:grab}
+.task.dragging{opacity:.4}
+.task.done-like .title{text-decoration:line-through;opacity:.8}
+.pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:13px}
+.pill.ok{border-color:#2e7d32;color:#a5d6a7;background:rgba(46,125,50,.12)}
+.pill.warn{border-color:#7c5f1a;color:#f5d08a;background:rgba(245,158,11,.12)}
+.pill.danger{border-color:#7c1a1a;color:#f2aaaa;background:rgba(239,68,68,.12)}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:12px;color:var(--muted)}
+.badge.warn{border-color:#5a4918;color:#f7d36e}
+.badge.tag{border-color:#374467}
+.badge.points{border-color:#2e7d32;color:#a5d6a7;background:rgba(46,125,50,.12)}
+.badge.epic{border-color:#374467}
+.progress{height:8px;background:#0e1530;border-radius:999px;border:1px solid var(--border);overflow:hidden}
+.bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.n{font-weight:700}
+.muted{color:var(--muted)}
+.task .title{font-weight:700;font-size:1rem}
+.task .notes{color:var(--muted);margin-top:6px;white-space:pre-line;font-size:.86rem;line-height:1.3}
+.task .footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.task .footer .mini{color:var(--muted);font-size:.86rem}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:16px;max-width:96vw}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap}
+.statsGrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+.statCard{background:#11172d;border:1px solid var(--border);border-radius:14px;padding:14px}
+.statCard h4{margin:0 0 4px 0}
+.miniLabel{margin-top:6px;color:var(--muted)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--panel);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
+.modal h3{margin:0 0 12px;font-size:16px}
+.modal p,.modal li{font-size:13px;color:var(--muted);line-height:1.5}
+.modal code{background:#0e1426;padding:1px 6px;border-radius:4px;font-size:11px}
+.modal a{color:var(--accent2)}
+.modal input{width:100%;margin-bottom:8px}
+@media (max-width:900px){
+  .wrap{padding:10px}
+  .panel{padding:12px}
+}
+@media (max-width:520px){
+  header .row-between{flex-wrap:wrap;gap:8px}
+  .btn{padding:6px 10px;font-size:13px;border-radius:10px}
+  h1{font-size:1.2rem}
+  #dateBadge{font-size:.8rem;padding:5px 9px;max-width:65vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .panel{border-radius:12px}
+  .kanban .col{min-height:120px;padding:10px}
+  .task{padding:9px;border-radius:10px}
+  .task .title{font-size:.95rem}
+  .pill{padding:4px 8px;font-size:.8rem}
+}
+</style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="./index.html">🪙 Cofrinho</a>
+    <a href="./sprint.html" class="active">🏁 Sprint</a>
+  </nav>
+  <header>
+    <div class="wrap row-between">
+      <div class="row" style="flex-wrap:wrap">
+        <h1 id="sprintTitle">🏁 Sprint</h1>
+        <span id="dateBadge" class="pill">—</span>
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        <select id="sprintSelect" title="Select sprint"></select>
+        <select id="epicFilter" title="Filter by epic"><option value="all">All epics</option></select>
+        <button class="btn small" id="exportBtn" title="Export JSON">↓</button>
+        <button class="btn small" id="importBtn" title="Import JSON">↑</button>
+        <input id="importFile" type="file" accept=".json,application/json" style="display:none">
+        <button class="btn small" id="syncBtn" title="Cloud sync">⚙ Sync</button>
+        <span id="syncStatus" class="pill" style="font-size:11px"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="row" style="gap:14px;align-items:stretch;flex-wrap:wrap">
+        <form id="taskForm" class="panel" style="flex:.85;min-width:260px">
+          <h3 style="margin-top:0">Add task</h3>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <input name="title" placeholder="Task title" style="flex:1;min-width:180px" required />
+            <select name="epicId" id="epicSelect"><option value="">Epic…</option></select>
+          </div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">
+            <input name="tags" placeholder="tags (comma separated)" style="flex:1;min-width:140px" />
+            <select name="points"><option>1</option><option>2</option><option>3</option><option selected>5</option><option>8</option><option>13</option></select>
+            <select name="status"><option value="todo">To do</option><option value="doing">In progress</option><option value="done">Done</option><option value="notdone">Not done</option></select>
+            <button class="btn primary">Add</button>
+          </div>
+        </form>
+        <div class="panel" style="flex:1.15;min-width:260px">
+          <h3 style="margin-top:0">Sprint summary</h3>
+          <div>Overall progress</div>
+          <div class="progress"><div id="progressBar" class="bar" style="width:0%"></div></div>
+          <div class="muted" id="progressPct">0%</div>
+          <div id="statsCards" class="statsGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3 style="margin-top:0">Epics</h3>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <input id="newEpicName" placeholder="New epic (e.g. Health)" style="flex:1;min-width:200px" />
+        <button class="btn" id="addEpicBtn">Add epic</button>
+      </div>
+      <div id="epicList" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
+    </section>
+
+    <section class="kanban">
+      <div class="col" data-col="todo"><h4>📁 To do (<span class="muted" id="todoCount">0</span>)</h4><div class="dropzone" id="todo"></div></div>
+      <div class="col" data-col="doing"><h4>🧱 In progress (<span class="muted" id="doingCount">0</span>)</h4><div class="dropzone" id="doing"></div></div>
+      <div class="col" data-col="done"><h4>✅ Done (<span class="muted" id="doneCount">0</span>)</h4><div class="dropzone" id="done"></div></div>
+      <div class="col" data-col="notdone"><h4 style="color:#ff7b7b">❌ Not done (<span class="muted" id="notDoneCount">0</span>)</h4><div class="dropzone" id="notdone"></div></div>
+    </section>
+  </main>
+
+  <dialog id="editTaskModal">
+    <form method="dialog" id="editTaskForm" style="min-width:320px;max-width:640px;padding:16px">
+      <h3>Edit task</h3>
+      <input name="title" id="et_title" placeholder="Title" style="width:100%;margin:6px 0" required>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <select name="points" id="et_points"><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>13</option></select>
+        <select name="status" id="et_status">
+          <option value="todo">To do</option><option value="doing">In progress</option><option value="done">Done</option><option value="notdone">Not done</option>
+        </select>
+        <select name="epicId" id="et_epic"><option value="">Epic…</option></select>
+        <input name="tags" id="et_tags" placeholder="tags (comma separated)" style="flex:1;min-width:140px" />
+      </div>
+      <textarea id="et_notes" placeholder="Notes / description" style="width:100%;margin-top:8px;min-height:120px"></textarea>
+      <div id="et_checkMeta" class="miniLabel" style="font-weight:600;margin-top:10px">Checklist</div>
+      <div id="et_checklist" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+      <div class="row" style="gap:8px;margin-top:10px">
+        <input id="et_newItem" placeholder="New checklist item..." style="flex:1">
+        <button class="btn" id="et_addItem" type="button">+ Item</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn warn" id="et_delete" type="button">Delete</button>
+        <button class="btn" type="button" onclick="document.getElementById('editTaskModal').close()">Cancel</button>
+        <button class="btn primary" id="et_save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="syncModal" class="modal-bg" style="display:none">
+    <div class="modal">
+      <h3>☁ Sync across devices</h3>
+      <p>Uses the <b>same Gist as Cofrinho</b> (separate file <code>sprint.json</code>). Configure once per device.</p>
+      <ol>
+        <li>Token: <a href="https://github.com/settings/tokens/new?scopes=gist&description=Sprint+Tracker" target="_blank">github.com/settings/tokens/new</a> → scope <code>gist</code></li>
+        <li>Gist ID: same as Cofrinho (the long part of the URL after your username)</li>
+      </ol>
+      <label class="muted" style="font-size:11px;display:block;margin-bottom:4px">Token</label>
+      <input id="cfgToken" type="password" placeholder="ghp_xxxx" autocomplete="off"/>
+      <label class="muted" style="font-size:11px;display:block;margin-bottom:4px">Gist ID</label>
+      <input id="cfgGistId" placeholder="abc123..." autocomplete="off"/>
+      <div id="cfgMsg" style="font-size:12px;margin:10px 0;min-height:18px"></div>
+      <div class="modal-actions">
+        <button class="btn warn" onclick="clearSync()">Disconnect</button>
+        <button class="btn" onclick="testSync()">Test</button>
+        <button class="btn primary" onclick="saveSync()">Save & sync</button>
+        <button class="btn" onclick="closeSync()">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const fmtDate = iso => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB');
+const escapeHtml = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+// ────── Storage / Gist sync ──────
+const SK = 'sprint-tracker-v2-offline';
+const TK = 'cof_token', GK = 'cof_gist';
+const GIST_FILE = 'sprint.json';
+let saveTimer = null, syncing = false;
+
+const getToken = () => localStorage.getItem(TK) || '';
+const getGistId = () => localStorage.getItem(GK) || '';
+const hasGist = () => !!(getToken() && getGistId());
+
+function setSyncStatus(t){
+  const el = document.getElementById('syncStatus'); if(!el) return;
+  el.textContent = `${hasGist()?'☁':'💾'} ${t}`;
+}
+
+async function gistFetchFile(){
+  const r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
+    headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json'}
+  });
+  if(!r.ok) throw new Error('GET '+r.status);
+  const d = await r.json();
+  return d.files[GIST_FILE]?.content || null;
+}
+
+async function gistSave(json){
+  const r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
+    method:'PATCH',
+    headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+    body: JSON.stringify({files:{[GIST_FILE]:{content:json}}})
+  });
+  if(!r.ok) throw new Error('PATCH '+r.status);
+}
+
+function persist(){
+  const json = JSON.stringify(state);
+  localStorage.setItem(SK, json);
+  if(!hasGist()) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    if(syncing) return;
+    syncing = true; setSyncStatus('saving…');
+    try{ await gistSave(json); setSyncStatus('synced') }
+    catch(e){ setSyncStatus('error: '+e.message) }
+    syncing = false;
+  }, 1200);
+}
+const save = persist;
+
+// ────── State ──────
+let state = { sprints: [], selected: 0 };
+
+const SEMI_ID = /^s[12]-\d{4}$/;
+function ensureSemiannualSprints(){
+  const year = new Date().getFullYear();
+  const want = [
+    {id:`s1-${year}`, name:`Semiannual I ${year}`, start:`${year}-01-01`, end:`${year}-07-19`},
+    {id:`s2-${year}`, name:`Semiannual II ${year}`, start:`${year}-07-20`, end:`${year}-12-31`}
+  ];
+  for(const w of want){
+    const ex = state.sprints.find(s => s.id === w.id);
+    if(!ex){
+      state.sprints.push({...w, epics:[], tasks:[], createdAt: Date.now()});
+    } else {
+      ex.name = w.name; ex.start = w.start; ex.end = w.end;
+    }
+  }
+  // migrate legacy non-semiannual sprints into current year's Semiannual I, then drop them
+  const target = state.sprints.find(s => s.id === `s1-${year}`);
+  const legacy = state.sprints.filter(s => !SEMI_ID.test(s.id));
+  if(legacy.length && target){
+    legacy.forEach(l => {
+      (l.tasks||[]).forEach(t => target.tasks.push(t));
+      (l.epics||[]).forEach(e => {
+        const exists = (target.epics||[]).some(x => String(x.name).trim().toLowerCase() === String(e.name).trim().toLowerCase());
+        if(!exists) (target.epics ||= []).push(e);
+      });
+    });
+    state.sprints = state.sprints.filter(s => SEMI_ID.test(s.id));
+  }
+  state.sprints.sort((a,b) => (a.start||'').localeCompare(b.start||''));
+}
+
+function findActiveIndex(){
+  const today = new Date().toISOString().slice(0,10);
+  let idx = state.sprints.findIndex(s => (s.start||'') <= today && (s.end||'') >= today);
+  if(idx >= 0) return idx;
+  // fall back to most recent past or first future
+  let best = -1;
+  for(let i=0;i<state.sprints.length;i++){
+    const s = state.sprints[i];
+    if((s.start||'') <= today && (best<0 || (state.sprints[best].start||'') < (s.start||''))) best = i;
+  }
+  return best >= 0 ? best : 0;
+}
+
+async function loadState(){
+  let raw = null;
+  if(hasGist()){
+    try{
+      setSyncStatus('downloading…');
+      const c = await gistFetchFile();
+      if(c && c.trim() && c.trim()!=='{}'){
+        localStorage.setItem(SK, c);
+        raw = c;
+        setSyncStatus('synced');
+      } else {
+        setSyncStatus('cloud empty');
+      }
+    } catch(e){ setSyncStatus('cloud error: '+e.message) }
+  } else {
+    setSyncStatus('local · no sync');
+  }
+  if(!raw) raw = localStorage.getItem(SK);
+  try{ if(raw) state = JSON.parse(raw)||state; }catch(e){console.error(e)}
+  if(!state.sprints) state.sprints = [];
+  ensureSemiannualSprints();
+  state.selected = findActiveIndex();
+  persist();
+}
+
+// ────── Render ──────
+const currentSprint = () => state.sprints[state.selected];
+
+function renderSprintOptions(){
+  $('#sprintSelect').innerHTML = state.sprints.map((s,i)=>`<option value="${i}" ${i===state.selected?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+}
+
+function renderHeader(){
+  const sp = currentSprint(); if(!sp) return;
+  const total = Math.max(1, Math.ceil((new Date(sp.end)-new Date(sp.start))/864e5));
+  const left = Math.max(0, Math.ceil((new Date(sp.end)-new Date())/864e5));
+  const ratio = left/total;
+  let cls = 'ok'; if(ratio<=1/3) cls='danger'; else if(ratio<=2/3) cls='warn';
+  $('#sprintTitle').textContent = sp.name;
+  const badge = $('#dateBadge');
+  badge.className = `pill ${cls}`;
+  const small = window.innerWidth <= 520;
+  if(small){
+    const ds = new Date(sp.start).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'});
+    const de = new Date(sp.end).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'});
+    badge.textContent = `⏳ ${ds} → ${de} • ${left}/${total}d`;
+  } else {
+    badge.textContent = `⏳ ${fmtDate(sp.start)} → ${fmtDate(sp.end)} · ${left}/${total} days left`;
+  }
+}
+
+function calcTotals(tasks){
+  let total=0, done=0, notdone=0;
+  (tasks||[]).forEach(t=>{
+    const p = Number(t.points)||0;
+    total += p;
+    if(t.status==='done') done += p;
+    if(t.status==='notdone') notdone += p;
+  });
+  return {total, done, notdone};
+}
+
+function renderStats(){
+  const sp = currentSprint(); const tasks = sp.tasks||[];
+  const {total, done, notdone} = calcTotals(tasks);
+  const pct = total ? Math.round((done/total)*100) : 0;
+  const pctNot = total ? Math.round((notdone/total)*100) : 0;
+  $('#progressBar').style.width = `${pct}%`;
+  $('#progressPct').textContent = `${pct}%`;
+  $('#todoCount').textContent = tasks.filter(t=>t.status==='todo').length;
+  $('#doingCount').textContent = tasks.filter(t=>t.status==='doing').length;
+  $('#doneCount').textContent = tasks.filter(t=>t.status==='done').length;
+  $('#notDoneCount').textContent = tasks.filter(t=>t.status==='notdone').length;
+  $('#statsCards').innerHTML = `<div class="statCard">
+    <div class="muted">Planned total</div>
+    <h4 class="n">${total} pts</h4>
+    <div class="muted">Delivered: ${done} pts · Not done: ${notdone} pts</div>
+    <div class="miniLabel">Completion</div>
+    <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+    <div class="muted">${pct}%</div>
+    <div class="miniLabel">Not done</div>
+    <div class="progress"><div class="bar" style="width:${pctNot}%"></div></div>
+    <div class="muted">${pctNot}% of points</div>
+  </div>`;
+}
+
+function makeDraggable(card){
+  card.addEventListener('dragstart',()=>card.classList.add('dragging'));
+  card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+}
+
+function getDragAfter(container, y){
+  const list = [...container.querySelectorAll('.task:not(.dragging)')];
+  return list.reduce((closest, child)=>{
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height/2;
+    return (offset<0 && offset>closest.offset) ? {offset,element:child} : closest;
+  }, {offset:Number.NEGATIVE_INFINITY}).element;
+}
+
+function persistOrder(status){
+  const sp = currentSprint();
+  const ids = $$(`#${status} .task`).map(el=>el.dataset.id);
+  sp.tasks.forEach(t=>{ if(t.status===status) t._order = ids.indexOf(t.id); });
+  save();
+}
+
+function moveTask(id, newStatus){
+  const sp = currentSprint();
+  const t = sp.tasks.find(x=>x.id===id); if(!t) return;
+  t.status = newStatus;
+  if(newStatus==='doing' && !t.startedAt) t.startedAt = new Date().toISOString().slice(0,10);
+  if(newStatus!=='doing') delete t.startedAt;
+  if(newStatus==='done' && !t.doneAt) t.doneAt = new Date().toISOString().slice(0,10);
+  if(newStatus!=='done' && t.doneAt) delete t.doneAt;
+  save();
+  renderStats();
+}
+
+function renderBoard(){
+  $$('.dropzone').forEach(c=>c.innerHTML='');
+  const sp = currentSprint();
+  const ep = $('#epicFilter').value;
+  const tasks = (sp.tasks||[]).filter(t=>ep==='all'||t.epicId===ep);
+  tasks.sort((a,b)=>(a._order||0)-(b._order||0));
+  tasks.forEach(task=>{
+    const card = document.createElement('article');
+    const doneLike = task.status==='done' || task.status==='notdone';
+    card.className = `task${doneLike?' done-like':''}`;
+    card.draggable = true; card.dataset.id = task.id;
+    const epicName = (sp.epics||[]).find(e=>e.id===task.epicId)?.name || 'No epic';
+    const tagsHTML = (task.tags||[]).map(tag=>`<span class="badge tag">${escapeHtml(tag)}</span>`).join('');
+    let daysHTML = '';
+    if(task.status==='doing' && task.startedAt){
+      const diff = Math.ceil(Math.abs(new Date()-new Date(`${task.startedAt}T00:00:00`))/864e5);
+      daysHTML = `<span class="badge warn" style="margin-left:auto">${diff} day${diff>1?'s':''} ago</span>`;
+    }
+    const total = Array.isArray(task.checklist) ? task.checklist.length : 0;
+    const doneItems = total ? task.checklist.filter(i=>i.done).length : 0;
+    const pct = total ? Math.round((doneItems/total)*100) : 0;
+    const notesPreview = task.notes ? `<div class="notes">${escapeHtml(task.notes).slice(0,180)}</div>` : '';
+    card.innerHTML = `<div class="row-between"><div class="title">${escapeHtml(task.title)}</div>${daysHTML}</div>
+      <div class="row" style="gap:6px;margin-top:4px;flex-wrap:wrap">
+        <span class="badge epic">${escapeHtml(epicName)}</span>
+        <span class="badge points">${escapeHtml(String(task.points))} pts</span>
+        ${tagsHTML}
+      </div>
+      ${notesPreview}
+      <div class="footer">
+        <div class="mini">Checklist</div>
+        <div class="mini">${doneItems}/${total} (${pct}%)</div>
+      </div>
+      <div class="progress"><div class="bar" style="width:${pct}%"></div></div>`;
+    makeDraggable(card);
+    card.addEventListener('dblclick',()=>openEdit(task.id));
+    $(`#${task.status}`).appendChild(card);
+  });
+}
+
+function renderEpicUIs(){
+  const sp = currentSprint();
+  const epics = sp.epics||[];
+  const opts = epics.map(e=>`<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+  $('#epicFilter').innerHTML = `<option value="all">All epics</option>${opts}`;
+  $('#epicSelect').innerHTML = `<option value="">Epic…</option>${opts}`;
+  $('#epicList').innerHTML = epics.map(e=>`<span class="badge">${escapeHtml(e.name)} <button class="btn ghost" data-action="del-epic" data-id="${e.id}" style="padding:2px 6px;border-radius:4px">×</button></span>`).join('');
+  $('#epicList').querySelectorAll('[data-action="del-epic"]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const sp = currentSprint();
+      sp.epics = (sp.epics||[]).filter(x=>x.id!==btn.dataset.id);
+      (sp.tasks||[]).forEach(t=>{ if(t.epicId===btn.dataset.id) t.epicId=''; });
+      save(); renderEpicUIs(); renderBoard();
+    });
+  });
+}
+
+function renderAll(){
+  if(!currentSprint()){
+    if(state.sprints.length>0) state.selected = 0;
+    else return;
+  }
+  renderSprintOptions();
+  renderEpicUIs();
+  renderHeader();
+  renderBoard();
+  renderStats();
+  $$('.dropzone').forEach(zone=>{
+    zone.addEventListener('dragover', e=>{
+      e.preventDefault();
+      const after = getDragAfter(zone, e.clientY);
+      const dragging = $('.task.dragging');
+      if(dragging){
+        if(after) zone.insertBefore(dragging, after);
+        else zone.appendChild(dragging);
+      }
+    });
+    zone.addEventListener('drop', e=>{
+      e.preventDefault();
+      const dragging = $('.task.dragging'); if(!dragging) return;
+      const newStatus = zone.parentElement.dataset.col;
+      moveTask(dragging.dataset.id, newStatus);
+      persistOrder(newStatus);
+      renderBoard();
+    });
+  });
+}
+
+// ────── Task editing ──────
+let et_currentId = null;
+
+function openEdit(id){
+  const sp = currentSprint();
+  const t = sp.tasks.find(x=>x.id===id); if(!t) return;
+  et_currentId = id;
+  $('#et_title').value = t.title || '';
+  $('#et_points').value = String(t.points || 0);
+  $('#et_status').value = t.status || 'todo';
+  const epOpts = (sp.epics||[]).map(e=>`<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('');
+  $('#et_epic').innerHTML = `<option value="">Epic…</option>${epOpts}`;
+  $('#et_epic').value = t.epicId || '';
+  $('#et_tags').value = (t.tags||[]).join(', ');
+  $('#et_notes').value = t.notes || '';
+  if(!Array.isArray(t.checklist)) t.checklist = [];
+  renderChecklistModal(t);
+  $('#editTaskModal').showModal();
+}
+
+function renderChecklistModal(t){
+  const host = $('#et_checklist'); host.innerHTML = '';
+  const total = t.checklist.length;
+  const done = t.checklist.filter(i=>i.done).length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+  $('#et_checkMeta').textContent = `Checklist (${done}/${total} – ${pct}%)`;
+  t.checklist.forEach((item, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.justifyContent = 'space-between';
+    row.innerHTML = `<label class="row" style="gap:8px;align-items:center;flex:1">
+        <input type="checkbox" ${item.done?'checked':''} data-idx="${idx}">
+        <span style="${item.done?'text-decoration:line-through;opacity:.7':''}">${escapeHtml(item.text||'')}</span>
+      </label>
+      <button class="btn" data-del="${idx}" type="button">×</button>`;
+    host.appendChild(row);
+  });
+  host.querySelectorAll('input[type="checkbox"]').forEach(ch=>ch.addEventListener('change', e=>{
+    const i = Number(e.target.dataset.idx);
+    t.checklist[i].done = e.target.checked;
+    renderChecklistModal(t);
+  }));
+  host.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click',()=>{
+    const i = Number(btn.dataset.del);
+    t.checklist.splice(i,1);
+    renderChecklistModal(t);
+  }));
+}
+
+$('#et_addItem').addEventListener('click',()=>{
+  const sp = currentSprint();
+  const t = sp.tasks.find(x=>x.id===et_currentId); if(!t) return;
+  const txt = String($('#et_newItem').value||'').trim(); if(!txt) return;
+  if(!Array.isArray(t.checklist)) t.checklist = [];
+  t.checklist.push({text:txt, done:false});
+  $('#et_newItem').value = '';
+  renderChecklistModal(t);
+});
+
+$('#et_save').addEventListener('click', e=>{
+  e.preventDefault();
+  const sp = currentSprint();
+  const t = sp.tasks.find(x=>x.id===et_currentId); if(!t) return;
+  t.title = String($('#et_title').value||'').trim();
+  t.points = Number($('#et_points').value||0);
+  const newStatus = $('#et_status').value;
+  if(newStatus !== t.status) moveTask(t.id, newStatus);
+  t.epicId = $('#et_epic').value || '';
+  t.tags = String($('#et_tags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  t.notes = $('#et_notes').value || '';
+  $('#editTaskModal').close();
+  save(); renderBoard(); renderStats();
+});
+
+$('#et_delete').addEventListener('click',()=>{
+  if(!confirm('Delete this task?')) return;
+  const sp = currentSprint();
+  sp.tasks = (sp.tasks||[]).filter(x=>x.id!==et_currentId);
+  $('#editTaskModal').close();
+  save(); renderBoard(); renderStats();
+});
+
+// ────── Sprint controls ──────
+$('#sprintSelect').addEventListener('change', e=>{
+  const idx = Number(e.target.value);
+  if(idx>=0 && idx<state.sprints.length){
+    state.selected = idx; save(); renderAll();
+  }
+});
+
+$('#epicFilter').addEventListener('change',()=>renderBoard());
+
+$('#taskForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const sp = currentSprint();
+  if(!sp.tasks) sp.tasks = [];
+  const newTask = {
+    id: crypto.randomUUID(),
+    title: String(fd.get('title')||'').trim(),
+    epicId: String(fd.get('epicId')||''),
+    tags: String(fd.get('tags')||'').split(',').map(s=>s.trim()).filter(Boolean),
+    points: Number(fd.get('points')||0),
+    status: String(fd.get('status')||'todo'),
+    notes: '', checklist: []
+  };
+  if(newTask.status==='doing') newTask.startedAt = new Date().toISOString().slice(0,10);
+  sp.tasks.push(newTask);
+  e.target.reset();
+  save(); renderBoard(); renderStats();
+});
+
+$('#addEpicBtn').addEventListener('click',()=>{
+  const input = $('#newEpicName');
+  const name = String(input.value||'').trim(); if(!name) return;
+  const sp = currentSprint();
+  if(!sp.epics) sp.epics = [];
+  if(sp.epics.some(e=>String(e.name).trim().toLowerCase()===name.toLowerCase())) return alert('An epic with that name already exists.');
+  sp.epics.push({id:crypto.randomUUID(), name});
+  input.value = '';
+  save(); renderEpicUIs();
+});
+
+// ────── Export / Import ──────
+$('#exportBtn').addEventListener('click',()=>{
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sprint-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+});
+
+$('#importBtn').addEventListener('click',()=>$('#importFile').click());
+
+$('#importFile').addEventListener('change', async e=>{
+  const file = e.target.files?.[0]; if(!file) return;
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    let sprints = [];
+    if(Array.isArray(data)) sprints = data;
+    else if(Array.isArray(data?.sprints)) sprints = data.sprints;
+    else if(Array.isArray(data?.state?.sprints)) sprints = data.state.sprints;
+    else { alert('Unrecognized file. Expected JSON with "sprints".'); return; }
+    if(!sprints.length){ alert('No sprints found.'); return; }
+    state.sprints = sprints;
+    state.selected = 0;
+    ensureSemiannualSprints();
+    state.selected = findActiveIndex();
+    save(); renderAll();
+    alert('Import complete!');
+  }catch(err){
+    console.error(err);
+    alert('Import failed: '+(err?.message||err));
+  } finally {
+    e.target.value = '';
+  }
+});
+
+// ────── Keyboard shortcuts ──────
+window.addEventListener('keydown', e=>{
+  const tag = (document.activeElement?.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||e.altKey||e.ctrlKey||e.metaKey) return;
+  if(document.querySelector('dialog[open]')) return;
+  if(e.key==='ArrowLeft' && state.selected>0){state.selected--;save();renderAll()}
+  else if(e.key==='ArrowRight' && state.selected<state.sprints.length-1){state.selected++;save();renderAll()}
+});
+
+// ────── Resize ──────
+let __rT;
+window.addEventListener('resize',()=>{clearTimeout(__rT);__rT=setTimeout(renderHeader,120)});
+
+// ────── Sync modal ──────
+window.openSync = function(){
+  $('#cfgToken').value = getToken();
+  $('#cfgGistId').value = getGistId();
+  $('#cfgMsg').textContent = '';
+  $('#syncModal').style.display = 'flex';
+};
+window.closeSync = function(){$('#syncModal').style.display='none'};
+window.testSync = async function(){
+  const t = $('#cfgToken').value.trim(), g = $('#cfgGistId').value.trim();
+  const m = $('#cfgMsg');
+  if(!t||!g){m.style.color='#f2aaaa';m.textContent='Fill in token and gist id';return}
+  m.style.color='var(--muted)';m.textContent='Testing…';
+  try{
+    const r = await fetch(`https://api.github.com/gists/${g}`,{headers:{Authorization:`token ${t}`}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    m.style.color='#a5d6a7';
+    m.textContent = `✓ Connected · files: ${Object.keys(d.files).join(', ')}`;
+  }catch(e){m.style.color='#f2aaaa';m.textContent='Failed: '+e.message}
+};
+window.saveSync = async function(){
+  const t = $('#cfgToken').value.trim(), g = $('#cfgGistId').value.trim();
+  const m = $('#cfgMsg');
+  if(!t||!g){m.style.color='#f2aaaa';m.textContent='Fill in token and gist id';return}
+  localStorage.setItem(TK, t);
+  localStorage.setItem(GK, g);
+  m.style.color='var(--muted)';m.textContent='Syncing…';
+  try{
+    const c = await gistFetchFile();
+    if(c && c.trim() && c.trim()!=='{}'){
+      const d = JSON.parse(c);
+      if(confirm('Sprint data found in cloud. Replace local with cloud data?\n\nOK = use cloud · Cancel = upload local data')){
+        state = d;
+        ensureSemiannualSprints();
+        state.selected = findActiveIndex();
+        localStorage.setItem(SK, JSON.stringify(state));
+        renderAll();
+        m.style.color='#a5d6a7';m.textContent='✓ Cloud data loaded';
+      } else {
+        await gistSave(JSON.stringify(state));
+        m.style.color='#a5d6a7';m.textContent='✓ Local data uploaded';
+      }
+    } else {
+      await gistSave(JSON.stringify(state));
+      m.style.color='#a5d6a7';m.textContent='✓ First upload to cloud';
+    }
+    setSyncStatus('synced');
+  }catch(e){m.style.color='#f2aaaa';m.textContent='Error: '+e.message}
+};
+window.clearSync = function(){
+  if(!confirm('Disconnect from cloud? Data stays in localStorage.')) return;
+  localStorage.removeItem(TK);
+  localStorage.removeItem(GK);
+  setSyncStatus('local · no sync');
+  closeSync();
+};
+$('#syncBtn').addEventListener('click', openSync);
+
+// ────── Boot ──────
+loadState().then(()=>renderAll());
+
+})();
+</script>
+</body>
+</html>

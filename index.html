@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0">
+<meta name="theme-color" content="#5aaef5">
+<title>Cofrinho de Hábitos</title>
+<style>
+:root{
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f4f4f5;
+  --color-background-success:#dcfce7;
+  --color-background-danger:#fee2e2;
+  --color-background-info:#dbeafe;
+  --color-border-primary:#18181b;
+  --color-border-secondary:#d4d4d8;
+  --color-border-tertiary:#e4e4e7;
+  --color-border-success:#86efac;
+  --color-border-danger:#fca5a5;
+  --color-border-info:#93c5fd;
+  --color-text-primary:#18181b;
+  --color-text-secondary:#71717a;
+  --color-text-success:#15803d;
+  --color-text-danger:#b91c1c;
+  --color-text-info:#1d4ed8;
+  --border-radius-md:6px;
+  --border-radius-lg:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --color-background-primary:#0a0a0a;
+    --color-background-secondary:#1c1c1c;
+    --color-background-success:#14532d33;
+    --color-background-danger:#7f1d1d33;
+    --color-background-info:#1e3a8a33;
+    --color-border-primary:#fafafa;
+    --color-border-secondary:#3f3f46;
+    --color-border-tertiary:#27272a;
+    --color-border-success:#15803d;
+    --color-border-danger:#991b1b;
+    --color-border-info:#1d4ed8;
+    --color-text-primary:#fafafa;
+    --color-text-secondary:#a1a1aa;
+    --color-text-success:#4ade80;
+    --color-text-danger:#f87171;
+    --color-text-info:#60a5fa;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:0 16px;-webkit-tap-highlight-color:transparent}
+.topnav{display:flex;gap:6px;padding:8px 0;margin:0 -16px;padding-left:16px;padding-right:16px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topnav a{padding:6px 14px;color:var(--color-text-secondary);text-decoration:none;border-radius:8px;font-size:14px}
+.topnav a.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500}
+input,button{font-family:inherit}
+@keyframes floatUp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-44px)}}
+@keyframes cmove{from{left:-110px}to{left:calc(100% + 20px)}}
+.tab-on{background:var(--color-background-secondary)!important;font-weight:500!important}
+.pxcloud.c1{animation:cmove 24s linear infinite}
+.pxcloud.c2{animation:cmove 38s linear infinite -16s}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:20px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;border:0.5px solid var(--color-border-secondary)}
+.modal h3{margin:0 0 12px;font-size:16px}
+.modal p,.modal li{font-size:13px;color:var(--color-text-secondary);line-height:1.5}
+.modal code{background:var(--color-background-secondary);padding:1px 6px;border-radius:4px;font-size:11px}
+.modal a{color:var(--color-text-info)}
+.modal input{width:100%;padding:8px 10px;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);margin-bottom:8px}
+.modal button{padding:7px 14px;font-size:12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary)}
+.modal button.primary{background:#3b82f6;color:white;border-color:#2563eb}
+.modal button.danger{background:none;color:#dc2626}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="./index.html" class="active">🪙 Cofrinho</a>
+  <a href="./sprint.html">🏁 Sprint</a>
+</nav>
+
+<div style="padding:16px 0;max-width:660px;margin:0 auto">
+<h2 style="position:absolute;left:-9999px">Cofrinho de hábitos</h2>
+
+<div id="syncbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px">
+  <div id="syncstatus" style="color:var(--color-text-secondary)"></div>
+  <button onclick="openSync()" style="font-size:11px;padding:4px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)">⚙ Sync</button>
+</div>
+
+<div id="metrics" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px"></div>
+<div id="counters" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+
+<div id="scene" style="background:linear-gradient(to bottom,#5aaef5 0%,#9dd0f7 55%,#5cb85c 55%,#3d9e3d 100%);border-radius:var(--border-radius-lg);margin-bottom:14px;position:relative;min-height:164px;overflow:hidden">
+  <svg class="pxcloud c1" viewBox="0 0 80 32" width="72" height="28" shape-rendering="crispEdges" style="position:absolute;top:10px">
+    <rect x="8" y="20" width="64" height="12" fill="white" opacity=".94"/>
+    <rect x="16" y="10" width="48" height="14" fill="white" opacity=".94"/>
+    <rect x="24" y="2" width="32" height="12" fill="white" opacity=".94"/>
+  </svg>
+  <svg class="pxcloud c2" viewBox="0 0 60 26" width="52" height="22" shape-rendering="crispEdges" style="position:absolute;top:22px">
+    <rect x="6" y="14" width="48" height="12" fill="white" opacity=".9"/>
+    <rect x="14" y="6" width="32" height="12" fill="white" opacity=".9"/>
+    <rect x="20" y="0" width="20" height="10" fill="white" opacity=".9"/>
+  </svg>
+  <div id="house-bg" style="position:absolute;bottom:45%;left:50%;transform:translateX(-50%)"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 10px">
+    <div id="piggy"></div>
+    <div style="flex:1;display:flex;justify-content:center;align-items:flex-end"><div id="boy"></div></div>
+    <div id="trash"></div>
+  </div>
+  <div id="floattext" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:20px;font-weight:700;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.35)"></div>
+  <div id="scenetip" style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.88);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.4)">clique numa ação abaixo</div>
+</div>
+
+<div style="display:flex;gap:6px;margin-bottom:14px">
+  <button onclick="setTab('actions')" id="tab-actions" style="flex:1;padding:8px;font-size:12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-primary)">Ações</button>
+  <button onclick="setTab('edit')" id="tab-edit" style="flex:1;padding:8px;font-size:12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-primary)">Editar</button>
+  <button onclick="setTab('receipt')" id="tab-receipt" style="flex:1;padding:8px;font-size:12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-primary)">Extrato</button>
+</div>
+
+<div id="panel-actions">
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">conquistas</div>
+    <div id="wins" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px"></div>
+  </div>
+  <div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">falhas</div>
+    <div id="fails" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px"></div>
+  </div>
+</div>
+
+<div id="panel-edit" style="display:none">
+  <div style="margin-bottom:18px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">conquistas</div>
+    <div id="edit-wins"></div>
+    <div style="display:grid;grid-template-columns:1fr 56px 70px auto;gap:6px;margin-top:8px;align-items:center">
+      <input id="nwl" placeholder="Nome da conquista" style="font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <input id="nwe" placeholder="😀" style="font-size:14px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);text-align:center"/>
+      <input id="nwa" type="number" step="0.01" placeholder="R$" min="0.01" style="font-size:12px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <button onclick="addWin()" style="font-size:12px;padding:7px 12px;background:var(--color-background-success);color:var(--color-text-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap">+ add</button>
+    </div>
+  </div>
+  <div style="margin-bottom:18px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">falhas</div>
+    <div id="edit-fails"></div>
+    <div style="display:grid;grid-template-columns:1fr 56px 70px auto;gap:6px;margin-top:8px;align-items:center">
+      <input id="nfl" placeholder="Nome da falha" style="font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <input id="nfe" placeholder="😞" style="font-size:14px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);text-align:center"/>
+      <input id="nfa" type="number" step="0.01" placeholder="R$" min="0.01" style="font-size:12px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <button onclick="addFail()" style="font-size:12px;padding:7px 12px;background:var(--color-background-danger);color:var(--color-text-danger);border:0.5px solid var(--color-border-danger);border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap">+ add</button>
+    </div>
+  </div>
+  <div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-secondary);margin-bottom:8px">contadores de dias</div>
+    <div id="edit-counters"></div>
+    <div style="display:grid;grid-template-columns:1fr 56px auto;gap:6px;margin-top:8px;align-items:center">
+      <input id="ncl" placeholder="Nome do contador (ex: Dias sem álcool)" style="font-size:12px;padding:7px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)"/>
+      <input id="nce" placeholder="📅" style="font-size:14px;padding:7px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);text-align:center"/>
+      <button onclick="addCounter()" style="font-size:12px;padding:7px 12px;background:var(--color-background-info);color:var(--color-text-info);border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);cursor:pointer;white-space:nowrap">+ add</button>
+    </div>
+    <div style="font-size:10px;color:var(--color-text-secondary);margin-top:6px">Emojis: cole do teclado do celular, do Mac (⌃⌘Espaço) ou copie de emojipedia.org</div>
+  </div>
+</div>
+
+<div id="panel-receipt" style="display:none">
+  <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden">
+    <div style="padding:16px 18px;border-bottom:0.5px solid var(--color-border-tertiary);text-align:center">
+      <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Extrato</div>
+      <div id="receipt-date" style="font-size:11px;color:var(--color-text-secondary);margin-top:2px"></div>
+    </div>
+    <div id="receipt-body" style="max-height:420px;overflow-y:auto"></div>
+    <div id="receipt-footer" style="padding:14px 18px;border-top:2px solid var(--color-border-primary)"></div>
+  </div>
+  <div style="font-size:10px;color:var(--color-text-secondary);margin-top:6px;text-align:center">toque no × para remover uma movimentação (reverte o saldo)</div>
+</div>
+
+<div style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+  <span style="font-size:10px;color:var(--color-text-secondary);flex:1">backup local sempre · use sync ☁ para outros dispositivos</span>
+  <button onclick="doImport()" style="font-size:11px;color:var(--color-text-secondary);background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;padding:5px 10px">↑ Importar</button>
+  <button onclick="doExport()" style="font-size:11px;color:var(--color-text-secondary);background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;padding:5px 10px">↓ Exportar</button>
+  <button onclick="doReset()" style="font-size:11px;color:var(--color-text-secondary);background:none;border:none;cursor:pointer;text-decoration:underline">resetar</button>
+</div>
+
+<!-- Sync Modal -->
+<div id="syncModal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <h3>☁ Sincronização entre dispositivos</h3>
+    <p>Use um <b>GitHub Gist privado</b> como nuvem pessoal. Configure uma vez por dispositivo.</p>
+    <ol>
+      <li>Crie um token: <a href="https://github.com/settings/tokens/new?scopes=gist&description=Cofrinho+Habitos" target="_blank">github.com/settings/tokens/new</a> → marque o escopo <code>gist</code> → gere e copie</li>
+      <li>Crie um Gist <b>privado</b>: <a href="https://gist.github.com/" target="_blank">gist.github.com</a> → nome do arquivo <code>cofrinho.json</code> → conteúdo <code>{}</code> → clique em <b>Create secret gist</b></li>
+      <li>Copie o ID do gist da URL (a parte longa após seu usuário)</li>
+    </ol>
+    <div style="margin-top:14px">
+      <label style="font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:4px">Token</label>
+      <input id="cfgToken" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+      <label style="font-size:11px;color:var(--color-text-secondary);display:block;margin-bottom:4px">Gist ID</label>
+      <input id="cfgGistId" placeholder="abc123def456..." autocomplete="off"/>
+    </div>
+    <div id="cfgMsg" style="font-size:12px;margin:10px 0;min-height:18px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button onclick="clearSync()" class="danger">Desconectar</button>
+      <button onclick="testSync()">Testar</button>
+      <button onclick="saveSync()" class="primary">Salvar e sincronizar</button>
+      <button onclick="closeSync()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const DW=[];
+const DF=[];
+const DC=[];
+const COUNTER_REMOVE_LABELS=new Set(["Meta A","Meta B","Meta C"]);
+const CAT={alcool:"#3b82f6",vape:"#8b5cf6",saude:"#10b981",custom:"#f59e0b"};
+const INT=0.015;
+const SK="hbank4";
+const TK="cof_token", GK="cof_gist";
+const GIST_FILE="cofrinho.json";
+
+let S={balance:0,transactions:[],lastDate:null,wins:[...DW],fails:[...DF],counters:[...DC]};
+let tab="actions";
+let saveTimer=null;
+let syncing=false;
+
+// ── Storage layer ─────────────────────────────────────────────
+function getToken(){return localStorage.getItem(TK)||""}
+function getGistId(){return localStorage.getItem(GK)||""}
+function hasGist(){return !!(getToken()&&getGistId())}
+function r2(n){return Math.round(n*100)/100}
+
+async function gistFetch(){
+  const r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
+    headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json"}
+  });
+  if(!r.ok)throw new Error("GET "+r.status);
+  const d=await r.json();
+  const f=d.files[GIST_FILE]||Object.values(d.files)[0];
+  return f?.content||null;
+}
+
+async function gistSave(json){
+  const r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
+    method:"PATCH",
+    headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},
+    body:JSON.stringify({files:{[GIST_FILE]:{content:json}}})
+  });
+  if(!r.ok)throw new Error("PATCH "+r.status);
+}
+
+async function loadRaw(){
+  if(hasGist()){
+    try{
+      setSyncStatus("baixando…");
+      const c=await gistFetch();
+      if(c&&c.trim()&&c.trim()!=="{}"){
+        localStorage.setItem(SK,c);
+        setSyncStatus("sincronizado");
+        return c;
+      }
+      setSyncStatus("nuvem vazia");
+    }catch(e){setSyncStatus("erro nuvem: "+e.message)}
+  }else{
+    setSyncStatus("local · sem sync");
+  }
+  return localStorage.getItem(SK);
+}
+
+function setSyncStatus(t){
+  const el=document.getElementById("syncstatus");
+  if(!el)return;
+  const icon=hasGist()?"☁":"💾";
+  el.textContent=`${icon} ${t}`;
+}
+
+async function persist(){
+  const json=JSON.stringify(S);
+  localStorage.setItem(SK,json);
+  if(!hasGist())return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(syncing)return;
+    syncing=true;setSyncStatus("salvando…");
+    try{await gistSave(json);setSyncStatus("sincronizado")}
+    catch(e){setSyncStatus("erro: "+e.message)}
+    syncing=false;
+  },1200);
+}
+
+// ── App logic ─────────────────────────────────────────────────
+async function load(){
+  try{
+    const raw=await loadRaw();
+    if(raw){
+      const d=JSON.parse(raw);
+      S={...S,...d};
+      if(!S.wins?.length)S.wins=[...DW];
+      if(!S.fails?.length)S.fails=[...DF];
+      if(!S.counters)S.counters=[...DC];
+      delete S.debt;
+      const beforeCount=S.counters.length;
+      S.counters=S.counters.filter(c=>!COUNTER_REMOVE_LABELS.has(c.label));
+      if(S.counters.length!==beforeCount)persist();
+    }
+  }catch(e){console.error(e)}
+  const today=new Date().toDateString();
+  if(S.lastDate!==today&&S.balance>0){
+    const i=r2(S.balance*INT);
+    S.balance=r2(S.balance+i);
+    S.transactions=[{id:uid(),type:"interest",label:"Juros do dia (+1.5%)",amount:i,date:fmtDate(new Date())},...S.transactions];
+    S.lastDate=today;
+    persist();
+  }
+  render();
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function fmtDate(d){return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});}
+function fmtDateShort(d){return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function getDays(sd){if(!sd)return 0;return Math.max(0,Math.floor((Date.now()-new Date(sd).getTime())/(864e5)));}
+
+// ── 16-bit pixel art SVGs ─────────────────────────────────────
+function houseHTML(){
+  return`<svg viewBox="0 0 88 76" width="88" height="76" shape-rendering="crispEdges">
+    <rect x="60" y="0" width="12" height="28" fill="#7a3b1e"/>
+    <rect x="57" y="3" width="18" height="5" fill="#5c2b14"/>
+    <rect x="62" y="-8" width="6" height="6" fill="rgba(255,255,255,.5)"/>
+    <rect x="65" y="-14" width="5" height="5" fill="rgba(255,255,255,.35)"/>
+    <rect x="38" y="8" width="12" height="8" fill="#b22222"/>
+    <rect x="30" y="16" width="28" height="8" fill="#b22222"/>
+    <rect x="20" y="24" width="48" height="8" fill="#cc2929"/>
+    <rect x="8" y="32" width="72" height="8" fill="#cc2929"/>
+    <rect x="6" y="38" width="76" height="5" fill="#8b1a1a"/>
+    <rect x="12" y="43" width="64" height="33" fill="#deb887"/>
+    <rect x="12" y="51" width="64" height="2" fill="#c8a06f"/>
+    <rect x="12" y="59" width="64" height="2" fill="#c8a06f"/>
+    <rect x="12" y="67" width="64" height="2" fill="#c8a06f"/>
+    <rect x="24" y="43" width="2" height="8" fill="#c8a06f"/>
+    <rect x="46" y="43" width="2" height="8" fill="#c8a06f"/>
+    <rect x="68" y="43" width="2" height="8" fill="#c8a06f"/>
+    <rect x="12" y="53" width="2" height="6" fill="#c8a06f"/>
+    <rect x="34" y="53" width="2" height="6" fill="#c8a06f"/>
+    <rect x="56" y="53" width="2" height="6" fill="#c8a06f"/>
+    <rect x="14" y="45" width="20" height="17" fill="#87ceeb"/>
+    <rect x="14" y="45" width="20" height="3" fill="#4a90c4"/>
+    <rect x="23" y="45" width="3" height="17" fill="#4a90c4"/>
+    <rect x="54" y="45" width="20" height="17" fill="#87ceeb"/>
+    <rect x="54" y="45" width="20" height="3" fill="#4a90c4"/>
+    <rect x="63" y="45" width="3" height="17" fill="#4a90c4"/>
+    <rect x="30" y="54" width="28" height="22" fill="#8b4513"/>
+    <rect x="30" y="54" width="28" height="4" fill="#6b3410"/>
+    <rect x="30" y="58" width="28" height="18" fill="#a0522d"/>
+    <rect x="36" y="64" width="5" height="5" fill="#ffd700"/>
+  </svg>`;
+}
+
+function piggyHTML(dep){
+  return`<svg viewBox="0 0 104 92" width="92" height="81" shape-rendering="crispEdges">
+    <rect x="22" y="4" width="22" height="20" fill="#fb7bb8"/>
+    <rect x="26" y="8" width="14" height="12" fill="#e8548f"/>
+    <rect x="24" y="20" width="26" height="6" fill="#7b1d46"/>
+    <rect x="10" y="26" width="72" height="52" fill="#e8548f"/>
+    <rect x="6" y="34" width="4" height="36" fill="#e8548f"/>
+    <rect x="82" y="34" width="4" height="36" fill="#e8548f"/>
+    <rect x="12" y="24" width="68" height="52" fill="#fda4c8"/>
+    <rect x="8" y="32" width="4" height="36" fill="#fda4c8"/>
+    <rect x="80" y="32" width="4" height="36" fill="#fda4c8"/>
+    <rect x="12" y="24" width="68" height="11" fill="#fecce5"/>
+    <rect x="80" y="36" width="20" height="24" fill="#fda4c8"/>
+    <rect x="80" y="36" width="20" height="5" fill="#fecce5"/>
+    <rect x="83" y="42" width="7" height="8" fill="#f48fb5"/>
+    <rect x="92" y="42" width="7" height="8" fill="#f48fb5"/>
+    <rect x="85" y="44" width="3" height="4" fill="#e8548f"/>
+    <rect x="94" y="44" width="3" height="4" fill="#e8548f"/>
+    <rect x="54" y="34" width="12" height="12" fill="#1a0520"/>
+    <rect x="56" y="36" width="5" height="5" fill="#ffffff"/>
+    <rect x="26" y="50" width="16" height="8" fill="#f48fb5"/>
+    <rect x="6" y="38" width="4" height="6" fill="#fb7bb8"/>
+    <rect x="4" y="40" width="4" height="4" fill="#f48fb5"/>
+    <rect x="14" y="76" width="14" height="14" fill="#fda4c8"/>
+    <rect x="32" y="76" width="14" height="14" fill="#fda4c8"/>
+    <rect x="50" y="76" width="14" height="14" fill="#fda4c8"/>
+    <rect x="64" y="76" width="14" height="14" fill="#fda4c8"/>
+    <rect x="14" y="86" width="14" height="4" fill="#e8548f"/>
+    <rect x="32" y="86" width="14" height="4" fill="#e8548f"/>
+    <rect x="50" y="86" width="14" height="4" fill="#e8548f"/>
+    <rect x="64" y="86" width="14" height="4" fill="#e8548f"/>
+    ${dep?`<rect x="38" y="8" width="10" height="14" fill="#fbbf24">
+      <animate attributeName="y" values="4;22;28" dur="0.5s" fill="freeze"/>
+      <animate attributeName="opacity" values="1;1;0" dur="0.5s" fill="freeze"/>
+    </rect>`:""}
+  </svg>`;
+}
+
+function trashHTML(rec){
+  const b=rec?"#fca5a5":"#d1d5db";
+  const d=rec?"#f87171":"#9ca3af";
+  const hi=rec?"#fee2e2":"#f3f4f6";
+  return`<svg viewBox="0 0 56 78" width="50" height="70" shape-rendering="crispEdges">
+    <rect x="18" y="0" width="20" height="5" fill="${d}"/>
+    <rect x="16" y="3" width="24" height="5" fill="${d}"/>
+    <rect x="2" y="8" width="52" height="10" fill="${d}"/>
+    <rect x="4" y="16" width="48" height="4" fill="${b}"/>
+    <rect x="6" y="20" width="44" height="54" fill="${b}"/>
+    <rect x="6" y="20" width="44" height="9" fill="${hi}"/>
+    <rect x="6" y="35" width="44" height="3" fill="${d}"/>
+    <rect x="6" y="48" width="44" height="3" fill="${d}"/>
+    <rect x="6" y="61" width="44" height="3" fill="${d}"/>
+    <rect x="8" y="70" width="40" height="4" fill="${b}"/>
+  </svg>`;
+}
+
+function boyHTML(anim){
+  const x=anim==="deposit"?6:anim==="trash"?148:82;
+  const coin=anim==="deposit"
+    ?`<rect x="24" y="22" width="10" height="13" fill="#fbbf24" stroke="#d97706" stroke-width="1"/>`
+    :anim==="trash"
+    ?`<rect x="24" y="22" width="10" height="13" fill="#f87171" stroke="#dc2626" stroke-width="1"/>`
+    :"";
+  return`<svg viewBox="0 0 200 62" width="180" height="58" style="overflow:visible" shape-rendering="crispEdges">
+    <g style="transform:translateX(${x}px);transition:transform 0.7s ease">
+      <rect x="4" y="0" width="18" height="7" fill="#3d2b1f"/>
+      <rect x="2" y="5" width="22" height="17" fill="#fdbcb4"/>
+      <rect x="0" y="9" width="3" height="8" fill="#f5a89e"/>
+      <rect x="23" y="9" width="3" height="8" fill="#f5a89e"/>
+      <rect x="6" y="11" width="5" height="5" fill="#1a1a2e"/>
+      <rect x="15" y="11" width="5" height="5" fill="#1a1a2e"/>
+      <rect x="7" y="12" width="2" height="2" fill="#fff"/>
+      <rect x="16" y="12" width="2" height="2" fill="#fff"/>
+      <rect x="7" y="18" width="12" height="2" fill="#c0706a"/>
+      <rect x="9" y="20" width="8" height="2" fill="#c0706a"/>
+      <rect x="0" y="22" width="26" height="18" fill="#3b82f6"/>
+      <rect x="9" y="22" width="8" height="5" fill="#2563eb"/>
+      <rect x="-6" y="22" width="7" height="14" fill="#fdbcb4"/>
+      <rect x="25" y="22" width="7" height="14" fill="#fdbcb4"/>
+      ${coin}
+      <rect x="-6" y="36" width="7" height="5" fill="#fdbcb4"/>
+      <rect x="25" y="36" width="7" height="5" fill="#fdbcb4"/>
+      <rect x="1" y="40" width="11" height="13" fill="#1e40af"/>
+      <rect x="14" y="40" width="11" height="13" fill="#1e40af"/>
+      <rect x="0" y="40" width="26" height="3" fill="#92400e"/>
+      <rect x="-1" y="53" width="13" height="7" fill="#292524"/>
+      <rect x="14" y="53" width="13" height="7" fill="#292524"/>
+    </g>
+  </svg>`;
+}
+
+function mc(label,val,sub,col){return`<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:12px 14px;text-align:center"><div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.08em">${label}</div><div style="font-size:22px;font-weight:500;color:${col}">${val}</div><div style="font-size:10px;color:var(--color-text-secondary);margin-top:2px">${sub}</div></div>`;}
+
+function fmtMoney(n){return n.toFixed(2).replace(".",",")}
+
+function render(){
+  const b=S.balance;
+  const totalWins=S.transactions.filter(t=>t.type==="win").reduce((a,t)=>a+t.amount,0);
+  const balCol=b>0?"#16a34a":b<0?"#dc2626":"var(--color-text-secondary)";
+  const juros=b>0?`+R$${fmtMoney(b*INT)} hoje`:"só em saldo positivo";
+
+  document.getElementById("metrics").innerHTML=
+    mc("Cofrinho",`R$${fmtMoney(b)}`,b<0?"saldo negativo":"sem limite",balCol)+
+    mc("Juros/dia","1.5%",juros,"#d97706")+
+    mc("Total ganho",`R$${fmtMoney(totalWins)}`,`${S.transactions.filter(t=>t.type==="win").length} conquistas`,"#16a34a");
+
+  document.getElementById("counters").innerHTML=S.counters.map(c=>{
+    const days=getDays(c.startDate);
+    const startStr=c.startDate?`desde ${fmtDateShort(new Date(c.startDate))}`:"não iniciado";
+    return`<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:10px 12px;text-align:center">
+      <div style="font-size:15px;margin-bottom:2px">${c.emoji}</div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-primary)">${days}</div>
+      <div style="font-size:10px;color:var(--color-text-secondary);line-height:1.3;margin-bottom:4px">${c.label}</div>
+      <div style="font-size:9px;color:var(--color-text-secondary);margin-bottom:6px;font-style:italic">${startStr}</div>
+      <div style="display:flex;gap:3px;justify-content:center">
+        <button onclick="startCounter('${c.id}')" title="Marcar hoje como dia 1" style="font-size:10px;padding:2px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;color:var(--color-text-secondary)">Dia 1 hoje</button>
+        <button onclick="resetCounter('${c.id}')" title="Zerar" style="font-size:10px;padding:2px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;color:#dc2626">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("house-bg").innerHTML=houseHTML();
+  document.getElementById("piggy").innerHTML=piggyHTML(false);
+  document.getElementById("trash").innerHTML=trashHTML(false);
+  document.getElementById("boy").innerHTML=boyHTML(null);
+
+  document.getElementById("wins").innerHTML=S.wins.map(w=>
+    `<button onclick="doWin('${w.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-left:3px solid ${CAT[w.cat]||CAT.custom};border-radius:var(--border-radius-md);cursor:pointer;text-align:left;width:100%"><span style="font-size:15px">${w.emoji}</span><div style="flex:1"><div style="font-size:12px;color:var(--color-text-primary);line-height:1.3">${w.label}</div></div><span style="font-size:13px;font-weight:500;color:#16a34a;white-space:nowrap">+R$${fmtMoney(w.amount)}</span></button>`
+  ).join("");
+
+  document.getElementById("fails").innerHTML=S.fails.map(f=>
+    `<button onclick="doFail('${f.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-left:3px solid ${CAT[f.cat]||CAT.custom};border-radius:var(--border-radius-md);cursor:pointer;text-align:left;width:100%"><span style="font-size:15px">${f.emoji}</span><div style="flex:1"><div style="font-size:12px;color:var(--color-text-primary);line-height:1.3">${f.label}</div></div><span style="font-size:13px;font-weight:500;color:#dc2626;white-space:nowrap">-R$${fmtMoney(Math.abs(f.amount))}</span></button>`
+  ).join("");
+
+  document.getElementById("edit-wins").innerHTML=S.wins.map(w=>
+    `<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:4px">
+    <span style="font-size:14px">${w.emoji}</span>
+    <span style="flex:1;font-size:12px;color:var(--color-text-primary)">${w.label}</span>
+    <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">R$</span>
+    <input type="number" step="0.01" value="${w.amount}" min="0.01" onchange="updateWinAmt('${w.id}',this.value)" style="width:64px;font-size:12px;padding:4px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:#16a34a;text-align:center"/>
+    <button onclick="removeWin('${w.id}')" style="font-size:11px;padding:2px 8px;color:#dc2626;border:0.5px solid #fca5a5;border-radius:var(--border-radius-md);background:none;cursor:pointer">×</button>
+    </div>`
+  ).join("");
+
+  document.getElementById("edit-fails").innerHTML=S.fails.map(f=>
+    `<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:4px">
+    <span style="font-size:14px">${f.emoji}</span>
+    <span style="flex:1;font-size:12px;color:var(--color-text-primary)">${f.label}</span>
+    <span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">-R$</span>
+    <input type="number" step="0.01" value="${Math.abs(f.amount)}" min="0.01" onchange="updateFailAmt('${f.id}',this.value)" style="width:64px;font-size:12px;padding:4px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:#dc2626;text-align:center"/>
+    <button onclick="removeFail('${f.id}')" style="font-size:11px;padding:2px 8px;color:#dc2626;border:0.5px solid #fca5a5;border-radius:var(--border-radius-md);background:none;cursor:pointer">×</button>
+    </div>`
+  ).join("");
+
+  document.getElementById("edit-counters").innerHTML=S.counters.map(c=>
+    `<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:4px">
+    <span style="font-size:14px">${c.emoji}</span>
+    <span style="flex:1;font-size:12px;color:var(--color-text-primary)">${c.label}</span>
+    <button onclick="removeCounter('${c.id}')" style="font-size:11px;padding:2px 8px;color:#dc2626;border:0.5px solid #fca5a5;border-radius:var(--border-radius-md);background:none;cursor:pointer">×</button>
+    </div>`
+  ).join("");
+
+  renderReceipt();
+  setTab(tab,true);
+}
+
+function renderReceipt(){
+  const today=fmtDateShort(new Date());
+  document.getElementById("receipt-date").textContent=`Impresso em ${today}`;
+  const txs=S.transactions;
+  if(txs.length===0){
+    document.getElementById("receipt-body").innerHTML=`<div style="padding:20px;text-align:center;font-size:12px;color:var(--color-text-secondary)">Nenhuma movimentação ainda</div>`;
+    document.getElementById("receipt-footer").innerHTML="";
+    return;
+  }
+  // ensure all have ids
+  txs.forEach(t=>{if(!t.id)t.id=uid()});
+  const icons={win:"✅",fail:"❌",interest:"📈",loan:"💸"};
+  const grouped={};
+  txs.forEach(t=>{
+    const day=t.date.split(",")[0].trim();
+    if(!grouped[day])grouped[day]=[];
+    grouped[day].push(t);
+  });
+  let html="";
+  Object.entries(grouped).forEach(([day,items])=>{
+    html+=`<div style="padding:6px 18px;background:var(--color-background-secondary);font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.08em;border-bottom:0.5px solid var(--color-border-tertiary)">${day}</div>`;
+    items.forEach(t=>{
+      const col=t.amount>0?"#16a34a":"#dc2626";
+      const amtStr=t.amount>0?`+R$${fmtMoney(t.amount)}`:`-R$${fmtMoney(Math.abs(t.amount))}`;
+      const time=t.date.includes(",")?t.date.split(",")[1]?.trim()||"":"";
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <span style="font-size:12px;min-width:16px">${icons[t.type]||"·"}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis">${t.label}</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">${time}</div>
+        </div>
+        <div style="font-size:13px;font-weight:500;color:${col};white-space:nowrap">${amtStr}</div>
+        <button onclick="removeTx('${t.id}')" title="Remover esta movimentação" style="font-size:13px;padding:2px 7px;color:var(--color-text-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:none;cursor:pointer">×</button>
+      </div>`;
+    });
+  });
+  document.getElementById("receipt-body").innerHTML=html;
+  const wins=txs.filter(t=>t.type==="win").reduce((a,t)=>a+t.amount,0);
+  const fails=txs.filter(t=>t.type==="fail").reduce((a,t)=>a+t.amount,0);
+  const interest=txs.filter(t=>t.type==="interest").reduce((a,t)=>a+t.amount,0);
+  const balCol=S.balance>0?"#16a34a":S.balance<0?"#dc2626":"var(--color-text-primary)";
+  document.getElementById("receipt-footer").innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Conquistas</span><span style="color:#16a34a">+R$${fmtMoney(wins)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>Falhas</span><span style="color:#dc2626">-R$${fmtMoney(Math.abs(fails))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"><span>Juros acumulados</span><span style="color:#d97706">+R$${fmtMoney(interest)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:500;color:var(--color-text-primary);border-top:0.5px solid var(--color-border-primary);padding-top:10px"><span>Saldo atual</span><span style="color:${balCol}">R$${fmtMoney(S.balance)}</span></div>
+    <div style="font-size:10px;color:var(--color-text-secondary);margin-top:6px;text-align:center">${txs.length} movimentações registradas</div>`;
+}
+
+window.setTab=function(t){
+  tab=t;
+  ["actions","edit","receipt"].forEach(x=>{
+    document.getElementById("panel-"+x).style.display=x===t?"block":"none";
+    const btn=document.getElementById("tab-"+x);
+    if(btn){btn.className=x===t?"tab-on":"";btn.style.background=x===t?"var(--color-background-secondary)":"none";}
+  });
+};
+
+function anim(type,amount,cb){
+  document.getElementById("piggy").innerHTML=piggyHTML(type==="deposit");
+  document.getElementById("trash").innerHTML=trashHTML(type==="trash");
+  document.getElementById("boy").innerHTML=boyHTML(type);
+  document.getElementById("scenetip").textContent=type==="deposit"?"depositando...":"indo pro lixo...";
+  const ft=document.getElementById("floattext");
+  ft.style.display="block";ft.style.animation="none";
+  ft.style.color=type==="deposit"?"#16a34a":"#dc2626";
+  ft.textContent=(type==="deposit"?"+":"-")+"R$"+fmtMoney(Math.abs(amount));
+  void ft.offsetWidth;ft.style.animation="floatUp 0.9s ease forwards";
+  setTimeout(()=>{ft.style.display="none";document.getElementById("scenetip").textContent="clique numa ação abaixo";cb();render();},700);
+}
+
+window.doWin=function(id){
+  const it=S.wins.find(w=>w.id===id);if(!it)return;
+  anim("deposit",it.amount,()=>{
+    S.balance=r2(S.balance+it.amount);
+    S.transactions=[{id:uid(),type:"win",label:it.label,amount:it.amount,date:fmtDate(new Date())},...S.transactions];
+    if(!S.lastDate)S.lastDate=new Date().toDateString();
+    persist();
+  });
+};
+
+window.doFail=function(id){
+  const it=S.fails.find(f=>f.id===id);if(!it)return;
+  anim("trash",it.amount,()=>{
+    S.balance=r2(S.balance+it.amount);
+    S.transactions=[{id:uid(),type:"fail",label:it.label,amount:it.amount,date:fmtDate(new Date())},...S.transactions];
+    persist();
+  });
+};
+
+window.removeTx=function(id){
+  const idx=S.transactions.findIndex(t=>t.id===id);
+  if(idx<0)return;
+  const tx=S.transactions[idx];
+  const sign=tx.amount>0?"+":"-";
+  if(!confirm(`Remover "${tx.label}" (${sign}R$${fmtMoney(Math.abs(tx.amount))})?\nO saldo será revertido.`))return;
+  S.balance=r2(S.balance-tx.amount);
+  S.transactions.splice(idx,1);
+  persist();render();
+};
+
+window.addWin=function(){
+  const l=document.getElementById("nwl").value.trim();
+  const e=document.getElementById("nwe").value.trim()||"⭐";
+  const a=Math.max(0.01,parseFloat(document.getElementById("nwa").value)||5);
+  if(!l)return;
+  S.wins.push({id:uid(),label:l,amount:r2(a),emoji:e,cat:"custom"});
+  document.getElementById("nwl").value="";document.getElementById("nwe").value="";document.getElementById("nwa").value="";
+  persist();render();
+};
+
+window.addFail=function(){
+  const l=document.getElementById("nfl").value.trim();
+  const e=document.getElementById("nfe").value.trim()||"⚠️";
+  const a=Math.max(0.01,parseFloat(document.getElementById("nfa").value)||5);
+  if(!l)return;
+  S.fails.push({id:uid(),label:l,amount:-r2(a),emoji:e,cat:"custom"});
+  document.getElementById("nfl").value="";document.getElementById("nfe").value="";document.getElementById("nfa").value="";
+  persist();render();
+};
+
+window.updateWinAmt=function(id,v){
+  const it=S.wins.find(w=>w.id===id);if(!it)return;
+  it.amount=Math.max(0.01,r2(parseFloat(v)||0.01));persist();render();
+};
+
+window.updateFailAmt=function(id,v){
+  const it=S.fails.find(f=>f.id===id);if(!it)return;
+  it.amount=-Math.max(0.01,r2(parseFloat(v)||0.01));persist();render();
+};
+
+window.removeWin=function(id){S.wins=S.wins.filter(w=>w.id!==id);persist();render();};
+window.removeFail=function(id){S.fails=S.fails.filter(f=>f.id!==id);persist();render();};
+
+window.addCounter=function(){
+  const l=document.getElementById("ncl").value.trim();
+  const e=document.getElementById("nce").value.trim()||"📅";
+  if(!l)return;
+  S.counters.push({id:uid(),label:l,emoji:e,startDate:null});
+  document.getElementById("ncl").value="";document.getElementById("nce").value="";
+  persist();render();
+};
+
+window.startCounter=function(id){
+  const c=S.counters.find(x=>x.id===id);if(!c)return;
+  c.startDate=new Date().toISOString();persist();render();
+};
+
+window.resetCounter=function(id){
+  const c=S.counters.find(x=>x.id===id);if(!c)return;
+  c.startDate=null;persist();render();
+};
+
+window.removeCounter=function(id){S.counters=S.counters.filter(c=>c.id!==id);persist();render();};
+
+window.doReset=function(){
+  if(!confirm("Resetar saldo e histórico? Ações e contadores são mantidos."))return;
+  S.balance=0;S.transactions=[];S.lastDate=null;persist();render();
+};
+
+window.doExport=function(){
+  const json=JSON.stringify(S,null,2);
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="cofrinho_backup_"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.doImport=function(){
+  const input=document.createElement("input");
+  input.type="file";
+  input.accept=".json,application/json";
+  input.onchange=function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async function(ev){
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(!d||typeof d!=="object")throw new Error("formato inválido");
+        // full replace (não merge — para evitar dados antigos remanescentes)
+        S={
+          balance:typeof d.balance==="number"?d.balance:0,
+          transactions:Array.isArray(d.transactions)?d.transactions:[],
+          lastDate:d.lastDate||null,
+          wins:Array.isArray(d.wins)&&d.wins.length?d.wins:[...DW],
+          fails:Array.isArray(d.fails)&&d.fails.length?d.fails:[...DF],
+          counters:Array.isArray(d.counters)?d.counters:[...DC]
+        };
+        // garantir ids em transactions antigas
+        S.transactions.forEach(t=>{if(!t.id)t.id=uid()});
+        await persist();
+        render();
+        alert(`Dados importados: ${S.transactions.length} movimentações, saldo R$${fmtMoney(S.balance)}`);
+      }catch(err){
+        console.error(err);
+        alert("Erro ao importar: "+err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+};
+
+// ── Sync modal ─────────────────────────────────────────
+window.openSync=function(){
+  document.getElementById("cfgToken").value=getToken();
+  document.getElementById("cfgGistId").value=getGistId();
+  document.getElementById("cfgMsg").textContent="";
+  document.getElementById("syncModal").style.display="flex";
+};
+window.closeSync=function(){document.getElementById("syncModal").style.display="none"};
+window.testSync=async function(){
+  const t=document.getElementById("cfgToken").value.trim();
+  const g=document.getElementById("cfgGistId").value.trim();
+  const m=document.getElementById("cfgMsg");
+  if(!t||!g){m.style.color="#dc2626";m.textContent="Preencha token e gist id";return}
+  m.style.color="var(--color-text-secondary)";m.textContent="Testando…";
+  try{
+    const r=await fetch(`https://api.github.com/gists/${g}`,{headers:{Authorization:`token ${t}`}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    m.style.color="#16a34a";m.textContent=`✓ Conectado · arquivos: ${Object.keys(d.files).join(", ")}`;
+  }catch(e){m.style.color="#dc2626";m.textContent="Falhou: "+e.message}
+};
+window.saveSync=async function(){
+  const t=document.getElementById("cfgToken").value.trim();
+  const g=document.getElementById("cfgGistId").value.trim();
+  const m=document.getElementById("cfgMsg");
+  if(!t||!g){m.style.color="#dc2626";m.textContent="Preencha token e gist id";return}
+  localStorage.setItem(TK,t);localStorage.setItem(GK,g);
+  m.style.color="var(--color-text-secondary)";m.textContent="Sincronizando…";
+  // Tentar baixar primeiro (cloud > local)
+  try{
+    const c=await gistFetch();
+    if(c&&c.trim()&&c.trim()!=="{}"){
+      const d=JSON.parse(c);
+      if(confirm("Encontrei dados na nuvem. Substituir o que está aqui pelos da nuvem?\n\nOK = usar nuvem · Cancelar = enviar dados locais para a nuvem")){
+        S={...S,...d};
+        delete S.debt;
+        S.transactions.forEach(x=>{if(!x.id)x.id=uid()});
+        localStorage.setItem(SK,JSON.stringify(S));
+        render();
+        m.style.color="#16a34a";m.textContent="✓ Dados da nuvem carregados";
+      }else{
+        await gistSave(JSON.stringify(S));
+        m.style.color="#16a34a";m.textContent="✓ Dados locais enviados";
+      }
+    }else{
+      await gistSave(JSON.stringify(S));
+      m.style.color="#16a34a";m.textContent="✓ Primeiro envio para a nuvem";
+    }
+    setSyncStatus("sincronizado");
+  }catch(e){m.style.color="#dc2626";m.textContent="Erro: "+e.message}
+};
+window.clearSync=function(){
+  if(!confirm("Desconectar a nuvem? Os dados ficam salvos localmente."))return;
+  localStorage.removeItem(TK);localStorage.removeItem(GK);
+  setSyncStatus("local · sem sync");
+  closeSync();
+};
+
+setTab("actions");
+load();
+})();
+</script>
+</body>
+</html>
