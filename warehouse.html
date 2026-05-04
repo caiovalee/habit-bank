@@ -7,6 +7,8 @@
     <title>Almoxarifado Pessoal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root{--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+        body{font-family:var(--font-sans);font-size:14px}
         .topnav{display:flex;gap:6px;padding:8px 14px;background:#ffffffd9;border-bottom:1px solid rgb(226 232 240);position:sticky;top:0;z-index:30;backdrop-filter:blur(8px)}
         .topnav a{padding:6px 14px;color:#475569;text-decoration:none;border-radius:10px;font-size:14px}
         .topnav a.active{background:#e2e8f0;color:#0f172a;font-weight:600}
@@ -125,7 +127,7 @@
         );
 
         const WarningBanner = ({ children }) => (
-            <div className="max-w-7xl mx-auto px-4 pt-4">
+            <div className="max-w-2xl mx-auto px-4 pt-4">
                 <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {children}
                 </div>
@@ -147,7 +149,7 @@
         function Header({ onAdd, onSave, onOpenSync, saveLabel, syncLabel, saveButtonLabel, saveButtonDisabled }) {
             return (
                 <header className="sticky top-[54px] z-20 backdrop-blur bg-white/70 border-b border-slate-200">
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
+                    <div className="max-w-2xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white grid place-items-center shadow"><Icon.Cart className="w-4 h-4" /></div>
                             <div>
@@ -820,7 +822,7 @@
                     {IS_FILE_PROTOCOL ? <WarningBanner>Esta página foi aberta como arquivo local (`file://`). Nesse modo, o navegador pode isolar ou sobrescrever o armazenamento e o save pode parecer quebrado. Use <b>http://localhost:8787/warehouse.html</b>.</WarningBanner> : null}
                     <Header onAdd={addItem} onSave={() => triggerManualSave(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} saveButtonLabel={saveButtonState === "saving" ? "Salvando…" : saveButtonState === "saved" ? "Salvo!" : "Salvar agora"} saveButtonDisabled={saveButtonState === "saving" || saveButtonState === "saved"} />
 
-                    <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+                    <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
                         <Section title="Resumo"><Stats items={data.items} /></Section>
 
                         <Section title={<span className="inline-flex items-center gap-2"><Icon.Search className="w-5 h-5" /> Controle de compras</span>} right={<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"><div className="relative w-full sm:w-72"><Icon.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nome, tags ou notas..." className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400" /></div><span className="text-xs text-slate-500">{filtered.length} itens</span></div>}>
@@ -844,7 +846,7 @@
                     <ManageCategoriesModal open={showCats} onClose={() => setShowCats(false)} categorias={data.cats} setCategorias={(cats) => setCats(cats)} items={data.items} setItems={(itemsOrUpdater) => setData(d => ({ ...d, items: normalizeItems(typeof itemsOrUpdater === 'function' ? itemsOrUpdater(d.items) : itemsOrUpdater) }))} />
                     <SyncModal open={showSync} onClose={() => setShowSync(false)} cfgToken={cfgToken} setCfgToken={setCfgToken} cfgGistId={cfgGistId} setCfgGistId={setCfgGistId} cfgMsg={cfgMsg} onTest={testSyncConfig} onSaveSync={saveSyncConfig} onClearSync={clearSyncConfig} />
 
-                    <footer className="max-w-7xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
+                    <footer className="max-w-2xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
 
                     <style>{`
             @media print { header, footer, .no-print { display: none !important; } main { padding: 0 !important; } body { background: white !important; } }
