@@ -135,7 +135,7 @@
         };
 
         // ===== Header (sem perfis e sem imprimir) =====
-        function Header({ onAdd, onSave, onOpenSync, saveLabel, syncLabel }) {
+        function Header({ onAdd, onSave, onOpenSync, saveLabel, syncLabel, saveButtonLabel, saveButtonDisabled }) {
             return (
                 <header className="sticky top-[54px] z-20 backdrop-blur bg-white/70 border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
@@ -150,7 +150,7 @@
                             <span className="text-xs text-slate-500">{saveLabel}</span>
                             <span className="text-xs text-slate-500">{syncLabel}</span>
                             <button onClick={onOpenSync} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">⚙ Sync</button>
-                            <button onClick={onSave} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">Salvar agora</button>
+                            <button onClick={onSave} disabled={saveButtonDisabled} className={classNames("px-3 py-2 rounded-xl text-xs transition-colors", saveButtonDisabled ? "border border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default" : "border border-slate-300 hover:bg-slate-50 text-slate-700")}>{saveButtonLabel}</button>
                             <button onClick={onAdd} className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm text-white inline-flex items-center gap-2"><Icon.Plus /> Novo item</button>
                         </div>
                     </div>
@@ -454,6 +454,7 @@
         }
 
         // ===== Persistência simples (sem perfis) =====
+        const LS_STATE = "almoxarifado-state-v4";
         const LS_ITEMS = "almoxarifado-items-v2";
         const LS_CATS = "almoxarifado-categorias-v2";
         const LS_PURCHASE_LOG = "almoxarifado-purchase-log-v3";
@@ -464,38 +465,50 @@
         const LS_DATA_PREFIX = "almoxarifado-data-v1::";
 
         function loadInitial() {
-            // 1) se já existem as chaves v2, usa elas
+            // 1) snapshot único mais novo
+            try {
+                const snapshot = JSON.parse(localStorage.getItem(LS_STATE) || "null");
+                if (snapshot && typeof snapshot === "object") {
+                    const items = Array.isArray(snapshot.items) ? snapshot.items : [];
+                    const cats = Array.isArray(snapshot.cats) && snapshot.cats.length ? snapshot.cats : CATEGORIAS_PADRAO;
+                    const purchaseLog = Array.isArray(snapshot.purchaseLog) ? snapshot.purchaseLog : [];
+                    return { items, cats, purchaseLog };
+                }
+            } catch { }
+            // 2) se já existem as chaves v2, usa elas
             try {
                 const i = JSON.parse(localStorage.getItem(LS_ITEMS) || "null");
                 const c = JSON.parse(localStorage.getItem(LS_CATS) || "null");
                 const p = JSON.parse(localStorage.getItem(LS_PURCHASE_LOG) || "null");
                 if (Array.isArray(i) && Array.isArray(c)) return { items: i, cats: c.length ? c : CATEGORIAS_PADRAO, purchaseLog: Array.isArray(p) ? p : [] };
             } catch { }
-            // 2) migrar de v1 (sem perfis)
+            // 3) migrar de v1 (sem perfis)
             try {
                 const i = JSON.parse(localStorage.getItem(OLD_ITEMS) || "null");
                 const c = JSON.parse(localStorage.getItem(OLD_CATS) || "null");
                 if (Array.isArray(i) || Array.isArray(c)) {
                     const data = { items: i || [], cats: (c && c.length ? c : CATEGORIAS_PADRAO), purchaseLog: [] };
+                    localStorage.setItem(LS_STATE, JSON.stringify(data));
                     localStorage.setItem(LS_ITEMS, JSON.stringify(data.items));
                     localStorage.setItem(LS_CATS, JSON.stringify(data.cats));
                     return data;
                 }
             } catch { }
-            // 3) tentar migrar do perfil ativo (não protegido)
+            // 4) tentar migrar do perfil ativo (não protegido)
             try {
                 const active = localStorage.getItem(LS_ACTIVE) || "voce";
                 const raw = localStorage.getItem(LS_DATA_PREFIX + active);
                 if (raw) {
                     const obj = JSON.parse(raw); if (obj && !obj.__enc) {
                         const data = { items: obj.items || [], cats: obj.cats || CATEGORIAS_PADRAO, purchaseLog: [] };
+                        localStorage.setItem(LS_STATE, JSON.stringify(data));
                         localStorage.setItem(LS_ITEMS, JSON.stringify(data.items));
                         localStorage.setItem(LS_CATS, JSON.stringify(data.cats));
                         return data;
                     }
                 }
             } catch { }
-            // 4) vazio
+            // 5) vazio
             return { items: [], cats: CATEGORIAS_PADRAO, purchaseLog: [] };
         }
 
@@ -512,10 +525,24 @@
             }));
         }
 
+        function buildExampleItems() {
+            const now = Date.now();
+            return [
+                { id: uid(), nome: "Dipirona 500mg", categoria: "Remédios", quantidade: 8, unidade: "cp", tags: ["uso diário"], registroData: "2026-04-10", notas: "Analgésico", createdAt: now - 1000000, updatedAt: now - 1000000 },
+                { id: uid(), nome: "Paracetamol 750mg", categoria: "Remédios", quantidade: 2, unidade: "cp", tags: ["reserva"], registroData: "2026-03-22", notas: "Ver lote", createdAt: now - 1000000, updatedAt: now - 1000000 },
+                { id: uid(), nome: "Desodorante", categoria: "Cuidados Pessoais", quantidade: 1, unidade: "un", tags: ["banheiro"], registroData: "2026-04-28", notas: "Rexona", createdAt: now - 900000, updatedAt: now - 900000 },
+                { id: uid(), nome: "Algodão", categoria: "Papelaria", quantidade: 1, unidade: "pct", tags: ["repor"], registroData: "2026-02-18", notas: "Bolinhas", createdAt: now - 800000, updatedAt: now - 800000 },
+                { id: uid(), nome: "Caneta esferográfica", categoria: "Papelaria", quantidade: 3, unidade: "un", tags: ["escritório"], registroData: "2026-01-12", notas: "Azul", createdAt: now - 700000, updatedAt: now - 700000 },
+                { id: uid(), nome: "Pilhas AA", categoria: "Diversos", quantidade: 10, unidade: "un", tags: ["eletrônicos"], registroData: "2025-12-06", notas: "Alcalina", createdAt: now - 600000, updatedAt: now - 600000 }
+            ];
+        }
+
         function AlmoxarifadoApp() {
             const [data, setData] = useState(() => {
                 const initial = loadInitial();
-                return { ...initial, items: normalizeItems(initial.items), purchaseLog: Array.isArray(initial.purchaseLog) ? initial.purchaseLog : [] };
+                const hasStoredData = Array.isArray(initial.items) && initial.items.length > 0;
+                const seededItems = hasStoredData ? initial.items : buildExampleItems();
+                return { ...initial, items: normalizeItems(seededItems), purchaseLog: Array.isArray(initial.purchaseLog) ? initial.purchaseLog : [] };
             });
             const [lastSavedAt, setLastSavedAt] = useState(null);
             const [syncStatus, setSyncStatus] = useState(() => hasGistConfig() ? "☁ configurado" : "💾 local");
@@ -523,12 +550,21 @@
             const [cfgToken, setCfgToken] = useState(() => getToken());
             const [cfgGistId, setCfgGistId] = useState(() => getGistId());
             const [cfgMsg, setCfgMsg] = useState("");
+            const [saveButtonState, setSaveButtonState] = useState("idle");
 
             function saveLocalData(snapshot = data) {
+                try { localStorage.setItem(LS_STATE, JSON.stringify(snapshot)); } catch { }
                 try { localStorage.setItem(LS_ITEMS, JSON.stringify(snapshot.items)); } catch { }
                 try { localStorage.setItem(LS_CATS, JSON.stringify(snapshot.cats)); } catch { }
                 try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(snapshot.purchaseLog || [])); } catch { }
                 setLastSavedAt(Date.now());
+            }
+            function triggerManualSave(snapshot = data) {
+                setSaveButtonState("saving");
+                saveLocalData(snapshot);
+                window.clearTimeout(window.__warehouseSaveButtonTimer);
+                setSaveButtonState("saved");
+                window.__warehouseSaveButtonTimer = window.setTimeout(() => setSaveButtonState("idle"), 1400);
             }
             async function testSyncConfig() {
                 const token = cfgToken.trim();
@@ -597,25 +633,27 @@
 
             // salvar sempre que mudar
             useEffect(() => {
+                try { localStorage.setItem(LS_STATE, JSON.stringify(data)); } catch { }
                 try { localStorage.setItem(LS_ITEMS, JSON.stringify(data.items)); } catch { }
                 try { localStorage.setItem(LS_CATS, JSON.stringify(data.cats)); } catch { }
                 try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(data.purchaseLog || [])); } catch { }
                 setLastSavedAt(Date.now());
             }, [data]);
 
-            // exemplos iniciais (se vazio)
             useEffect(() => {
-                if ((data.items || []).length === 0) {
-                    const ex = [
-                        { id: uid(), nome: "Dipirona 500mg", categoria: "Remédios", quantidade: 8, unidade: "cp", tags: ["uso diário"], registroData: "2026-04-10", notas: "Analgésico", createdAt: Date.now() - 1000000, updatedAt: Date.now() - 1000000 },
-                        { id: uid(), nome: "Paracetamol 750mg", categoria: "Remédios", quantidade: 2, unidade: "cp", tags: ["reserva"], registroData: "2026-03-22", notas: "Ver lote", createdAt: Date.now() - 1000000, updatedAt: Date.now() - 1000000 },
-                        { id: uid(), nome: "Desodorante", categoria: "Cuidados Pessoais", quantidade: 1, unidade: "un", tags: ["banheiro"], registroData: "2026-04-28", notas: "Rexona", createdAt: Date.now() - 900000, updatedAt: Date.now() - 900000 },
-                        { id: uid(), nome: "Algodão", categoria: "Papelaria", quantidade: 1, unidade: "pct", tags: ["repor"], registroData: "2026-02-18", notas: "Bolinhas", createdAt: Date.now() - 800000, updatedAt: Date.now() - 800000 },
-                        { id: uid(), nome: "Caneta esferográfica", categoria: "Papelaria", quantidade: 3, unidade: "un", tags: ["escritório"], registroData: "2026-01-12", notas: "Azul", createdAt: Date.now() - 700000, updatedAt: Date.now() - 700000 },
-                        { id: uid(), nome: "Pilhas AA", categoria: "Diversos", quantidade: 10, unidade: "un", tags: ["eletrônicos"], registroData: "2025-12-06", notas: "Alcalina", createdAt: Date.now() - 600000, updatedAt: Date.now() - 600000 }
-                    ];
-                    setData(d => ({ ...d, items: ex }));
-                }
+                const persistNow = () => saveLocalData(data);
+                const onVisibilityChange = () => {
+                    if (document.visibilityState === "hidden") persistNow();
+                };
+                window.addEventListener("beforeunload", persistNow);
+                document.addEventListener("visibilitychange", onVisibilityChange);
+                return () => {
+                    window.removeEventListener("beforeunload", persistNow);
+                    document.removeEventListener("visibilitychange", onVisibilityChange);
+                };
+            }, [data]);
+
+            useEffect(() => {
                 setSyncStatus(hasGistConfig() ? "☁ configurado" : "💾 local");
                 try { if (typeof window !== 'undefined' && !window.__almox_tests) { runSelfTests(); window.__almox_tests = true; } } catch { }
             }, []);
@@ -719,7 +757,7 @@
 
             return (
                 <div className="min-h-screen bg-slate-100">
-                    <Header onAdd={addItem} onSave={() => saveLocalData(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} />
+                    <Header onAdd={addItem} onSave={() => triggerManualSave(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} saveButtonLabel={saveButtonState === "saving" ? "Salvando…" : saveButtonState === "saved" ? "Salvo!" : "Salvar agora"} saveButtonDisabled={saveButtonState === "saving" || saveButtonState === "saved"} />
 
                     <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
                         <Section title="Resumo"><Stats items={data.items} /></Section>
