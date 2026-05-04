@@ -127,7 +127,7 @@
         );
 
         const WarningBanner = ({ children }) => (
-            <div className="max-w-2xl mx-auto px-4 pt-4">
+            <div className="max-w-5xl mx-auto px-4 pt-4">
                 <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {children}
                 </div>
@@ -149,7 +149,7 @@
         function Header({ onAdd, onSave, onOpenSync, saveLabel, syncLabel, saveButtonLabel, saveButtonDisabled }) {
             return (
                 <header className="sticky top-[54px] z-20 backdrop-blur bg-white/70 border-b border-slate-200">
-                    <div className="max-w-2xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
+                    <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white grid place-items-center shadow"><Icon.Cart className="w-4 h-4" /></div>
                             <div>
@@ -171,16 +171,15 @@
 
         function Toolbar({ categoria, setCategoria, sortBy, setSortBy, categorias, onManageCats }) {
             return (
-                <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-                    <div className="flex gap-2 items-center flex-wrap">
-                        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-                            {["Todas", ...categorias].map((c) => (
-                                <button key={c} onClick={() => setCategoria(c)} className={classNames("px-3 py-1.5 text-xs rounded-lg", categoria === c ? "bg-white shadow text-slate-900" : "text-slate-600 hover:text-slate-900")}>{c}</button>
-                            ))}
-                        </div>
-                        <button onClick={onManageCats} className="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 hover:bg-slate-50">Gerenciar categorias</button>
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl flex-wrap">
+                        {["Todas", ...categorias].map((c) => (
+                            <button key={c} onClick={() => setCategoria(c)} className={classNames("px-3 py-1.5 text-xs rounded-lg", categoria === c ? "bg-white shadow text-slate-900" : "text-slate-600 hover:text-slate-900")}>{c}</button>
+                        ))}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button onClick={onManageCats} className="px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-700 hover:bg-slate-50">Gerenciar categorias</button>
+                        <div className="flex items-center gap-2 ml-auto">
                         <Icon.Filter className="text-slate-400" />
                         <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-900">
                             <option value="updated">Ordenar: Atualização recente</option>
@@ -189,6 +188,7 @@
                             <option value="registro">Ordenar: Registro (mais recente)</option>
                             <option value="categoria">Ordenar: Categoria</option>
                         </select>
+                        </div>
                     </div>
                 </div>
             );
@@ -309,7 +309,7 @@
                 <div className="fixed inset-0 z-30">
                     <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
                     <div className="absolute inset-0 flex items-center justify-center p-4">
-                        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-200">
+                        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200">
                             <div className="p-4 border-b border-slate-200 flex items-center justify-between"><h3 className="text-lg font-semibold text-slate-900">{title}</h3><button onClick={onClose} className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50">Fechar</button></div>
                             <div className="p-4 max-h-[70vh] overflow-auto">{children}</div>
                             {footer && <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">{footer}</div>}
@@ -822,7 +822,7 @@
                     {IS_FILE_PROTOCOL ? <WarningBanner>Esta página foi aberta como arquivo local (`file://`). Nesse modo, o navegador pode isolar ou sobrescrever o armazenamento e o save pode parecer quebrado. Use <b>http://localhost:8787/warehouse.html</b>.</WarningBanner> : null}
                     <Header onAdd={addItem} onSave={() => triggerManualSave(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} saveButtonLabel={saveButtonState === "saving" ? "Salvando…" : saveButtonState === "saved" ? "Salvo!" : "Salvar agora"} saveButtonDisabled={saveButtonState === "saving" || saveButtonState === "saved"} />
 
-                    <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+                    <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
                         <Section title="Resumo"><Stats items={data.items} /></Section>
 
                         <Section title={<span className="inline-flex items-center gap-2"><Icon.Search className="w-5 h-5" /> Controle de compras</span>} right={<div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"><div className="relative w-full sm:w-72"><Icon.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nome, tags ou notas..." className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400" /></div><span className="text-xs text-slate-500">{filtered.length} itens</span></div>}>
@@ -846,7 +846,7 @@
                     <ManageCategoriesModal open={showCats} onClose={() => setShowCats(false)} categorias={data.cats} setCategorias={(cats) => setCats(cats)} items={data.items} setItems={(itemsOrUpdater) => setData(d => ({ ...d, items: normalizeItems(typeof itemsOrUpdater === 'function' ? itemsOrUpdater(d.items) : itemsOrUpdater) }))} />
                     <SyncModal open={showSync} onClose={() => setShowSync(false)} cfgToken={cfgToken} setCfgToken={setCfgToken} cfgGistId={cfgGistId} setCfgGistId={setCfgGistId} cfgMsg={cfgMsg} onTest={testSyncConfig} onSaveSync={saveSyncConfig} onClearSync={clearSyncConfig} />
 
-                    <footer className="max-w-2xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
+                    <footer className="max-w-5xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
 
                     <style>{`
             @media print { header, footer, .no-print { display: none !important; } main { padding: 0 !important; } body { background: white !important; } }
