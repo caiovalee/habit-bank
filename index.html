@@ -94,7 +94,7 @@ input,button{font-family:inherit}
   </div>
 </div>
 
-<div id="metrics" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px"></div>
+<div id="metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
 <div id="debtPanel"></div>
 <div id="counters" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
 
@@ -592,10 +592,11 @@ function render(){
   const b=S.balance;
   const debtTotal=S.debt.principal+S.debt.interest;
   const totalWins=S.transactions.filter(t=>t.type==="win").reduce((a,t)=>a+t.amount,0);
+  const totalSpent=Math.abs(S.transactions.filter(t=>t.type==="fail").reduce((a,t)=>a+t.amount,0));
   const balCol=balColor(b);
   const dailyEarn=b>0?r2(b*INT_POS):0;
 
-  // Metrics: Cofrinho · (Juros ou Dívida) · Total ganho
+  // Metrics: Cofrinho · (Juros ou Dívida) · Total ganho · Total gasto
   let metricsHtml=
     mc("Cofrinho",`R$${fmtMoney(b)}`,b>0?`+R$${fmtMoney(dailyEarn)}/dia (CDI)`:"sem saldo",balCol);
   if(debtTotal>0){
@@ -604,6 +605,7 @@ function render(){
     metricsHtml+=mc("Juros/dia","0,038%","100% CDI · ~14,79% a.a.","#d97706");
   }
   metricsHtml+=mc("Total ganho",`R$${fmtMoney(totalWins)}`,`${S.transactions.filter(t=>t.type==="win").length} conquistas`,"#16a34a");
+  metricsHtml+=mc("Total gasto",`R$${fmtMoney(totalSpent)}`,`${S.transactions.filter(t=>t.type==="fail").length} falhas`,"#dc2626");
   document.getElementById("metrics").innerHTML=metricsHtml;
 
   // Debt detail panel (only when debt > 0)

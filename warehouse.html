@@ -105,7 +105,7 @@
         };
 
         // ===== Header (sem perfis e sem imprimir) =====
-        function Header({ onAdd }) {
+        function Header({ onAdd, onSave, saveLabel }) {
             return (
                 <header className="sticky top-[54px] z-20 backdrop-blur bg-white/70 border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
@@ -117,6 +117,8 @@
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500">{saveLabel}</span>
+                            <button onClick={onSave} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">Salvar agora</button>
                             <button onClick={onAdd} className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm text-white inline-flex items-center gap-2"><Icon.Plus /> Novo item</button>
                         </div>
                     </div>
@@ -458,12 +460,21 @@
                 const initial = loadInitial();
                 return { ...initial, items: normalizeItems(initial.items), purchaseLog: Array.isArray(initial.purchaseLog) ? initial.purchaseLog : [] };
             });
+            const [lastSavedAt, setLastSavedAt] = useState(null);
+
+            function saveLocalData(snapshot = data) {
+                try { localStorage.setItem(LS_ITEMS, JSON.stringify(snapshot.items)); } catch { }
+                try { localStorage.setItem(LS_CATS, JSON.stringify(snapshot.cats)); } catch { }
+                try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(snapshot.purchaseLog || [])); } catch { }
+                setLastSavedAt(Date.now());
+            }
 
             // salvar sempre que mudar
             useEffect(() => {
                 try { localStorage.setItem(LS_ITEMS, JSON.stringify(data.items)); } catch { }
                 try { localStorage.setItem(LS_CATS, JSON.stringify(data.cats)); } catch { }
                 try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(data.purchaseLog || [])); } catch { }
+                setLastSavedAt(Date.now());
             }, [data]);
 
             // exemplos iniciais (se vazio)
@@ -581,7 +592,7 @@
 
             return (
                 <div className="min-h-screen bg-slate-100">
-                    <Header onAdd={addItem} />
+                    <Header onAdd={addItem} onSave={() => saveLocalData(data)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} />
 
                     <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
                         <Section title="Resumo"><Stats items={data.items} /></Section>
@@ -604,7 +615,7 @@
                         <ItemForm initial={editing} onSubmit={saveItem} onCancel={() => setShowForm(false)} categorias={displayCats} onCreateCategoria={(nome) => setCats(prev => prev.includes(nome) ? prev : [...prev, nome])} />
                     </Modal>
 
-                    <ManageCategoriesModal open={showCats} onClose={() => setShowCats(false)} categorias={data.cats} setCategorias={(cats) => setCats(cats)} items={data.items} setItems={(items) => setData(d => ({ ...d, items }))} />
+                    <ManageCategoriesModal open={showCats} onClose={() => setShowCats(false)} categorias={data.cats} setCategorias={(cats) => setCats(cats)} items={data.items} setItems={(itemsOrUpdater) => setData(d => ({ ...d, items: normalizeItems(typeof itemsOrUpdater === 'function' ? itemsOrUpdater(d.items) : itemsOrUpdater) }))} />
 
                     <footer className="max-w-7xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
 
