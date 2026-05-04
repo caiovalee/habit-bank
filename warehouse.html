@@ -34,6 +34,7 @@
         const TK = "cof_token";
         const GK = "cof_gist";
         const GIST_FILE = "warehouse.json";
+        const IS_FILE_PROTOCOL = typeof location !== "undefined" && location.protocol === "file:";
 
         // =============================
         // Utilidades
@@ -86,7 +87,7 @@
             });
             if (!response.ok) throw new Error("GET " + response.status);
             const data = await response.json();
-            const file = data.files?.[GIST_FILE] || Object.values(data.files || {})[0];
+            const file = data.files?.[GIST_FILE];
             return file?.content || null;
         }
         async function gistSaveWarehouse(json, token = getToken(), gistId = getGistId()) {
@@ -123,6 +124,14 @@
             </section>
         );
 
+        const WarningBanner = ({ children }) => (
+            <div className="max-w-7xl mx-auto px-4 pt-4">
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {children}
+                </div>
+            </div>
+        );
+
         const Icon = {
             Plus: (p) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" {...p}><path strokeWidth="2" strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>),
             Trash: (p) => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" {...p}><path strokeWidth="2" strokeLinecap="round" d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>),
@@ -149,8 +158,8 @@
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-slate-500">{saveLabel}</span>
                             <span className="text-xs text-slate-500">{syncLabel}</span>
-                            <button onClick={onOpenSync} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">⚙ Sync</button>
-                            <button onClick={onSave} disabled={saveButtonDisabled} className={classNames("px-3 py-2 rounded-xl text-xs transition-colors", saveButtonDisabled ? "border border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default" : "border border-slate-300 hover:bg-slate-50 text-slate-700")}>{saveButtonLabel}</button>
+                            <button onClick={onOpenSync} disabled={IS_FILE_PROTOCOL} className={classNames("px-3 py-2 rounded-xl text-xs", IS_FILE_PROTOCOL ? "border border-slate-200 text-slate-400 cursor-not-allowed" : "border border-slate-300 hover:bg-slate-50 text-slate-700")}>⚙ Sync</button>
+                            <button onClick={onSave} disabled={saveButtonDisabled || IS_FILE_PROTOCOL} className={classNames("px-3 py-2 rounded-xl text-xs transition-colors", (saveButtonDisabled || IS_FILE_PROTOCOL) ? "border border-emerald-300 bg-emerald-50 text-emerald-700 cursor-default" : "border border-slate-300 hover:bg-slate-50 text-slate-700")}>{IS_FILE_PROTOCOL ? "Use localhost" : saveButtonLabel}</button>
                             <button onClick={onAdd} className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm text-white inline-flex items-center gap-2"><Icon.Plus /> Novo item</button>
                         </div>
                     </div>
@@ -552,6 +561,13 @@
             const [cfgMsg, setCfgMsg] = useState("");
             const [saveButtonState, setSaveButtonState] = useState("idle");
 
+            function normalizeWarehouseState(raw) {
+                return {
+                    items: normalizeItems(raw?.items || []),
+                    cats: Array.isArray(raw?.cats) && raw.cats.length ? raw.cats : CATEGORIAS_PADRAO,
+                    purchaseLog: Array.isArray(raw?.purchaseLog) ? raw.purchaseLog : []
+                };
+            }
             function saveLocalData(snapshot = data) {
                 try { localStorage.setItem(LS_STATE, JSON.stringify(snapshot)); } catch { }
                 try { localStorage.setItem(LS_ITEMS, JSON.stringify(snapshot.items)); } catch { }
@@ -559,12 +575,37 @@
                 try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(snapshot.purchaseLog || [])); } catch { }
                 setLastSavedAt(Date.now());
             }
+            async function saveCloudData(snapshot = data, token = getToken(), gistId = getGistId()) {
+                await gistSaveWarehouse(JSON.stringify({
+                    items: snapshot.items,
+                    cats: snapshot.cats,
+                    purchaseLog: snapshot.purchaseLog || []
+                }), token, gistId);
+            }
             function triggerManualSave(snapshot = data) {
                 setSaveButtonState("saving");
                 saveLocalData(snapshot);
                 window.clearTimeout(window.__warehouseSaveButtonTimer);
-                setSaveButtonState("saved");
-                window.__warehouseSaveButtonTimer = window.setTimeout(() => setSaveButtonState("idle"), 1400);
+                const finishSavedState = () => {
+                    setSaveButtonState("saved");
+                    window.__warehouseSaveButtonTimer = window.setTimeout(() => setSaveButtonState("idle"), 1400);
+                };
+                if (hasGistConfig()) {
+                    setSyncStatus("☁ sincronizando…");
+                    saveCloudData(snapshot)
+                        .then(() => {
+                            setSyncStatus("☁ sincronizado");
+                            finishSavedState();
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                            setSyncStatus("☁ erro");
+                            setSaveButtonState("idle");
+                            alert("Erro ao sincronizar o Warehouse com o Gist: " + error.message);
+                        });
+                    return;
+                }
+                finishSavedState();
             }
             async function testSyncConfig() {
                 const token = cfgToken.trim();
@@ -595,24 +636,19 @@
                 try {
                     const remote = await gistFetchWarehouse(token, gistId);
                     if (remote && remote.trim() && remote.trim() !== "{}") {
-                        const parsed = JSON.parse(remote);
+                        const parsed = normalizeWarehouseState(JSON.parse(remote));
                         if (confirm("Encontrei dados na nuvem. Substituir o que está aqui pelos da nuvem?\n\nOK = usar nuvem · Cancelar = enviar dados locais para a nuvem")) {
-                            const next = {
-                                items: normalizeItems(parsed.items || []),
-                                cats: Array.isArray(parsed.cats) && parsed.cats.length ? parsed.cats : CATEGORIAS_PADRAO,
-                                purchaseLog: Array.isArray(parsed.purchaseLog) ? parsed.purchaseLog : []
-                            };
-                            setData(next);
-                            saveLocalData(next);
+                            setData(parsed);
+                            saveLocalData(parsed);
                             setCfgMsg("✓ Dados da nuvem carregados.");
                         } else {
                             saveLocalData(data);
-                            await gistSaveWarehouse(JSON.stringify(data), token, gistId);
+                            await saveCloudData(data, token, gistId);
                             setCfgMsg("✓ Dados locais enviados.");
                         }
                     } else {
                         saveLocalData(data);
-                        await gistSaveWarehouse(JSON.stringify(data), token, gistId);
+                        await saveCloudData(data, token, gistId);
                         setCfgMsg("✓ Primeiro envio para a nuvem.");
                     }
                     setSyncStatus("☁ sincronizado");
@@ -656,6 +692,30 @@
             useEffect(() => {
                 setSyncStatus(hasGistConfig() ? "☁ configurado" : "💾 local");
                 try { if (typeof window !== 'undefined' && !window.__almox_tests) { runSelfTests(); window.__almox_tests = true; } } catch { }
+            }, []);
+
+            useEffect(() => {
+                let cancelled = false;
+                if (!hasGistConfig()) return;
+                setSyncStatus("☁ baixando…");
+                gistFetchWarehouse()
+                    .then((remote) => {
+                        if (cancelled) return;
+                        if (remote && remote.trim() && remote.trim() !== "{}") {
+                            const next = normalizeWarehouseState(JSON.parse(remote));
+                            setData(next);
+                            saveLocalData(next);
+                            setSyncStatus("☁ sincronizado");
+                        } else {
+                            setSyncStatus("☁ vazio");
+                        }
+                    })
+                    .catch((error) => {
+                        if (cancelled) return;
+                        console.error(error);
+                        setSyncStatus("☁ erro");
+                    });
+                return () => { cancelled = true; };
             }, []);
 
             // CRUD itens
@@ -757,6 +817,7 @@
 
             return (
                 <div className="min-h-screen bg-slate-100">
+                    {IS_FILE_PROTOCOL ? <WarningBanner>Esta página foi aberta como arquivo local (`file://`). Nesse modo, o navegador pode isolar ou sobrescrever o armazenamento e o save pode parecer quebrado. Use <b>http://localhost:8787/warehouse.html</b>.</WarningBanner> : null}
                     <Header onAdd={addItem} onSave={() => triggerManualSave(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} saveButtonLabel={saveButtonState === "saving" ? "Salvando…" : saveButtonState === "saved" ? "Salvo!" : "Salvar agora"} saveButtonDisabled={saveButtonState === "saving" || saveButtonState === "saved"} />
 
                     <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
