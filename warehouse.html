@@ -31,6 +31,9 @@
         const { useEffect, useMemo, useState } = React;
 
         const APP_TIMEZONE = "America/Sao_Paulo";
+        const TK = "cof_token";
+        const GK = "cof_gist";
+        const GIST_FILE = "warehouse.json";
 
         // =============================
         // Utilidades
@@ -71,6 +74,33 @@
         }
         function stockStatus(it) { if ((Number(it.quantidade) || 0) <= 0) return { label: "Sem estoque", tone: "danger" }; if ((Number(it.quantidade) || 0) <= 2) return { label: "Baixo", tone: "warning" }; return { label: "OK", tone: "ok" }; }
         function lowStock(it) { return (Number(it.quantidade) || 0) <= 0; }
+        function getToken() { return localStorage.getItem(TK) || ""; }
+        function getGistId() { return localStorage.getItem(GK) || ""; }
+        function hasGistConfig() { return !!(getToken() && getGistId()); }
+        async function gistFetchWarehouse(token = getToken(), gistId = getGistId()) {
+            const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                headers: {
+                    Authorization: `token ${token}`,
+                    Accept: "application/vnd.github+json"
+                }
+            });
+            if (!response.ok) throw new Error("GET " + response.status);
+            const data = await response.json();
+            const file = data.files?.[GIST_FILE] || Object.values(data.files || {})[0];
+            return file?.content || null;
+        }
+        async function gistSaveWarehouse(json, token = getToken(), gistId = getGistId()) {
+            const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `token ${token}`,
+                    Accept: "application/vnd.github+json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ files: { [GIST_FILE]: { content: json } } })
+            });
+            if (!response.ok) throw new Error("PATCH " + response.status);
+        }
 
         const CATEGORIAS_PADRAO = ["Remédios", "Cuidados Pessoais", "Papelaria", "Diversos"];
 
@@ -105,7 +135,7 @@
         };
 
         // ===== Header (sem perfis e sem imprimir) =====
-        function Header({ onAdd, onSave, saveLabel }) {
+        function Header({ onAdd, onSave, onOpenSync, saveLabel, syncLabel }) {
             return (
                 <header className="sticky top-[54px] z-20 backdrop-blur bg-white/70 border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-2 items-center justify-between">
@@ -118,6 +148,8 @@
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-slate-500">{saveLabel}</span>
+                            <span className="text-xs text-slate-500">{syncLabel}</span>
+                            <button onClick={onOpenSync} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">⚙ Sync</button>
                             <button onClick={onSave} className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs text-slate-700">Salvar agora</button>
                             <button onClick={onAdd} className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm text-white inline-flex items-center gap-2"><Icon.Plus /> Novo item</button>
                         </div>
@@ -361,6 +393,31 @@
             );
         }
 
+        function SyncModal({ open, onClose, cfgToken, setCfgToken, cfgGistId, setCfgGistId, cfgMsg, onTest, onSaveSync, onClearSync }) {
+            if (!open) return null;
+            return (
+                <Modal open={open} onClose={onClose} title="☁ Sincronização entre dispositivos">
+                    <div className="space-y-3">
+                        <p className="text-sm text-slate-600">Use o mesmo token e o mesmo Gist das outras páginas. O warehouse será salvo no arquivo <code>warehouse.json</code>.</p>
+                        <div>
+                            <label className="text-sm text-slate-600">Token</label>
+                            <input value={cfgToken} onChange={(e) => setCfgToken(e.target.value)} type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autoComplete="off" className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 bg-white" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-slate-600">Gist ID</label>
+                            <input value={cfgGistId} onChange={(e) => setCfgGistId(e.target.value)} placeholder="abc123def456..." autoComplete="off" className="w-full mt-1 px-3 py-2 rounded-xl border border-slate-300 bg-white" />
+                        </div>
+                        <div className="text-sm min-h-[20px] text-slate-600">{cfgMsg}</div>
+                        <div className="flex justify-end gap-2 flex-wrap">
+                            <button type="button" onClick={onClearSync} className="px-3 py-2 rounded-xl text-xs border border-rose-300 text-rose-700 hover:bg-rose-50">Desconectar</button>
+                            <button type="button" onClick={onTest} className="px-3 py-2 rounded-xl text-xs border border-slate-300 hover:bg-slate-50">Testar</button>
+                            <button type="button" onClick={onSaveSync} className="px-3 py-2 rounded-xl text-xs bg-indigo-600 hover:bg-indigo-700 text-white">Salvar e sincronizar</button>
+                        </div>
+                    </div>
+                </Modal>
+            );
+        }
+
         function PurchaseHistory({ log, onDeleteEntry }) {
             const grouped = {};
             log.forEach((entry) => {
@@ -461,12 +518,81 @@
                 return { ...initial, items: normalizeItems(initial.items), purchaseLog: Array.isArray(initial.purchaseLog) ? initial.purchaseLog : [] };
             });
             const [lastSavedAt, setLastSavedAt] = useState(null);
+            const [syncStatus, setSyncStatus] = useState(() => hasGistConfig() ? "☁ configurado" : "💾 local");
+            const [showSync, setShowSync] = useState(false);
+            const [cfgToken, setCfgToken] = useState(() => getToken());
+            const [cfgGistId, setCfgGistId] = useState(() => getGistId());
+            const [cfgMsg, setCfgMsg] = useState("");
 
             function saveLocalData(snapshot = data) {
                 try { localStorage.setItem(LS_ITEMS, JSON.stringify(snapshot.items)); } catch { }
                 try { localStorage.setItem(LS_CATS, JSON.stringify(snapshot.cats)); } catch { }
                 try { localStorage.setItem(LS_PURCHASE_LOG, JSON.stringify(snapshot.purchaseLog || [])); } catch { }
                 setLastSavedAt(Date.now());
+            }
+            async function testSyncConfig() {
+                const token = cfgToken.trim();
+                const gistId = cfgGistId.trim();
+                if (!token || !gistId) {
+                    setCfgMsg("Preencha token e gist id.");
+                    return;
+                }
+                setCfgMsg("Testando…");
+                try {
+                    await gistFetchWarehouse(token, gistId);
+                    setCfgMsg("✓ Conectado ao Gist.");
+                } catch (error) {
+                    setCfgMsg("Falhou: " + error.message);
+                }
+            }
+            async function saveSyncConfig() {
+                const token = cfgToken.trim();
+                const gistId = cfgGistId.trim();
+                if (!token || !gistId) {
+                    setCfgMsg("Preencha token e gist id.");
+                    return;
+                }
+                localStorage.setItem(TK, token);
+                localStorage.setItem(GK, gistId);
+                setCfgMsg("Sincronizando…");
+                setSyncStatus("☁ sincronizando…");
+                try {
+                    const remote = await gistFetchWarehouse(token, gistId);
+                    if (remote && remote.trim() && remote.trim() !== "{}") {
+                        const parsed = JSON.parse(remote);
+                        if (confirm("Encontrei dados na nuvem. Substituir o que está aqui pelos da nuvem?\n\nOK = usar nuvem · Cancelar = enviar dados locais para a nuvem")) {
+                            const next = {
+                                items: normalizeItems(parsed.items || []),
+                                cats: Array.isArray(parsed.cats) && parsed.cats.length ? parsed.cats : CATEGORIAS_PADRAO,
+                                purchaseLog: Array.isArray(parsed.purchaseLog) ? parsed.purchaseLog : []
+                            };
+                            setData(next);
+                            saveLocalData(next);
+                            setCfgMsg("✓ Dados da nuvem carregados.");
+                        } else {
+                            saveLocalData(data);
+                            await gistSaveWarehouse(JSON.stringify(data), token, gistId);
+                            setCfgMsg("✓ Dados locais enviados.");
+                        }
+                    } else {
+                        saveLocalData(data);
+                        await gistSaveWarehouse(JSON.stringify(data), token, gistId);
+                        setCfgMsg("✓ Primeiro envio para a nuvem.");
+                    }
+                    setSyncStatus("☁ sincronizado");
+                } catch (error) {
+                    setCfgMsg("Erro: " + error.message);
+                    setSyncStatus("☁ erro");
+                }
+            }
+            function clearSyncConfig() {
+                if (!confirm("Desconectar a nuvem? Os dados continuam salvos localmente.")) return;
+                localStorage.removeItem(TK);
+                localStorage.removeItem(GK);
+                setCfgToken("");
+                setCfgGistId("");
+                setCfgMsg("");
+                setSyncStatus("💾 local");
             }
 
             // salvar sempre que mudar
@@ -490,6 +616,7 @@
                     ];
                     setData(d => ({ ...d, items: ex }));
                 }
+                setSyncStatus(hasGistConfig() ? "☁ configurado" : "💾 local");
                 try { if (typeof window !== 'undefined' && !window.__almox_tests) { runSelfTests(); window.__almox_tests = true; } } catch { }
             }, []);
 
@@ -592,7 +719,7 @@
 
             return (
                 <div className="min-h-screen bg-slate-100">
-                    <Header onAdd={addItem} onSave={() => saveLocalData(data)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} />
+                    <Header onAdd={addItem} onSave={() => saveLocalData(data)} onOpenSync={() => setShowSync(true)} saveLabel={lastSavedAt ? `Salvo ${formatDateTime(lastSavedAt)}` : "Ainda não salvo"} syncLabel={syncStatus} />
 
                     <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
                         <Section title="Resumo"><Stats items={data.items} /></Section>
@@ -616,6 +743,7 @@
                     </Modal>
 
                     <ManageCategoriesModal open={showCats} onClose={() => setShowCats(false)} categorias={data.cats} setCategorias={(cats) => setCats(cats)} items={data.items} setItems={(itemsOrUpdater) => setData(d => ({ ...d, items: normalizeItems(typeof itemsOrUpdater === 'function' ? itemsOrUpdater(d.items) : itemsOrUpdater) }))} />
+                    <SyncModal open={showSync} onClose={() => setShowSync(false)} cfgToken={cfgToken} setCfgToken={setCfgToken} cfgGistId={cfgGistId} setCfgGistId={setCfgGistId} cfgMsg={cfgMsg} onTest={testSyncConfig} onSaveSync={saveSyncConfig} onClearSync={clearSyncConfig} />
 
                     <footer className="max-w-7xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-500">Feito com ♥ para organizar seu estoque. Registre a compra para atualizar a quantidade, guardar a data e manter o histórico abaixo.</footer>
 
