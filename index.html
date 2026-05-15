@@ -86,10 +86,8 @@ input,button{font-family:inherit}
 <div id="syncbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px">
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <div id="syncstatus" style="color:var(--color-text-secondary)"></div>
-    <div id="notionstatus" style="color:var(--color-text-secondary)"></div>
   </div>
   <div style="display:flex;gap:6px;align-items:center">
-    <button onclick="syncNotion()" style="font-size:11px;padding:4px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)">📝 Notion</button>
     <button onclick="openSync()" style="font-size:11px;padding:4px 10px;background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)">⚙ Sync</button>
   </div>
 </div>
@@ -252,7 +250,6 @@ const DEBT_CAP_MULT=2;     // teto: total da dívida não passa de 2× o valor o
 const SK="hbank4";
 const TK="cof_token", GK="cof_gist";
 const GIST_FILE="cofrinho.json";
-const NOTION_BASE_KEY="hb_notion_base";
 
 let S={balance:0,debt:{principal:0,original:0,interest:0},transactions:[],lastDate:null,wins:[...DW],fails:[...DF],counters:[...DC]};
 let tab="actions";
@@ -266,22 +263,32 @@ function hasGist(){return !!(getToken()&&getGistId())}
 function r2(n){return Math.round(n*100)/100}
 
 async function gistFetch(){
-  const r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
-    headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json"}
-  });
-  if(!r.ok)throw new Error("GET "+r.status);
+  let r;
+  try{
+    r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
+      headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json"}
+    });
+  }catch{throw new Error("sem conexão com o GitHub")}
+  if(r.status===401)throw new Error("token inválido ou expirado — reconfigure o sync");
+  if(r.status===404)throw new Error("Gist não encontrado — verifique o ID");
+  if(!r.ok)throw new Error(`GitHub retornou ${r.status}`);
   const d=await r.json();
   const f=d.files[GIST_FILE]||Object.values(d.files)[0];
   return f?.content||null;
 }
 
 async function gistSave(json){
-  const r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
-    method:"PATCH",
-    headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},
-    body:JSON.stringify({files:{[GIST_FILE]:{content:json}}})
-  });
-  if(!r.ok)throw new Error("PATCH "+r.status);
+  let r;
+  try{
+    r=await fetch(`https://api.github.com/gists/${getGistId()}`,{
+      method:"PATCH",
+      headers:{Authorization:`token ${getToken()}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},
+      body:JSON.stringify({files:{[GIST_FILE]:{content:json}}})
+    });
+  }catch{throw new Error("sem conexão com o GitHub")}
+  if(r.status===401)throw new Error("token inválido ou expirado — reconfigure o sync");
+  if(r.status===404)throw new Error("Gist não encontrado — verifique o ID");
+  if(!r.ok)throw new Error(`GitHub retornou ${r.status}`);
 }
 
 async function loadRaw(){
@@ -309,38 +316,6 @@ function setSyncStatus(t){
   el.textContent=`${icon} ${t}`;
 }
 
-function getNotionBase(){
-  const saved=(localStorage.getItem(NOTION_BASE_KEY)||"").trim();
-  if(saved) return saved.replace(/\/$/,"");
-  if(location.protocol.startsWith("http")) return location.origin;
-  return "http://localhost:8787";
-}
-
-function setNotionStatus(t,col){
-  const el=document.getElementById("notionstatus");
-  if(!el)return;
-  el.textContent=t?`📝 ${t}`:"";
-  el.style.color=col||"var(--color-text-secondary)";
-}
-
-async function notionPost(path,payload){
-  let r;
-  try{
-    r=await fetch(getNotionBase()+path,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-  }catch(e){
-    throw new Error("servidor local indisponível. Rode `npm start` para habilitar o sync com Notion.");
-  }
-  let data={};
-  try{data=await r.json()}catch{}
-  if(!r.ok||data.ok===false){
-    throw new Error(data.error||`falha HTTP ${r.status}`);
-  }
-  return data;
-}
 
 async function persist(){
   const json=JSON.stringify(S);
@@ -1303,24 +1278,6 @@ window.clearSync=function(){
   closeSync();
 };
 
-window.syncNotion=async function(){
-  setNotionStatus("sincronizando…","#d97706");
-  try{
-    const data=await notionPost("/api/notion/cofrinho/sync",{state:S});
-    S={...S,...data.state};
-    await persist();
-    render();
-    setNotionStatus("sincronizado","#16a34a");
-    if(data.page?.url){
-      alert(`Cofrinho enviado ao Notion com sucesso.\n\nPágina: ${data.page.url}`);
-    }else{
-      alert("Cofrinho enviado ao Notion com sucesso.");
-    }
-  }catch(e){
-    setNotionStatus("erro","#dc2626");
-    alert("Erro ao sincronizar com o Notion: "+e.message);
-  }
-};
 
 window.rcpClear=function(){
   document.getElementById('rcpFrom').value='';

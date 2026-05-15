@@ -107,9 +107,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
         <button class="btn small" id="exportBtn" title="Export JSON">↓</button>
         <button class="btn small" id="importBtn" title="Import JSON">↑</button>
         <input id="importFile" type="file" accept=".json,application/json" style="display:none">
-        <button class="btn small" id="notionBtn" title="Notion sync">📝 Notion</button>
         <button class="btn small" id="syncBtn" title="Cloud sync">⚙ Sync</button>
-        <span id="notionStatus" class="pill" style="font-size:11px"></span>
         <span id="syncStatus" class="pill" style="font-size:11px"></span>
       </div>
     </div>
@@ -231,7 +229,6 @@ const escapeHtml = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const SK = 'sprint-tracker-v2-offline';
 const TK = 'cof_token', GK = 'cof_gist';
 const GIST_FILE = 'sprint.json';
-const NOTION_BASE_KEY = 'hb_notion_base';
 let saveTimer = null, syncing = false;
 
 const getToken = () => localStorage.getItem(TK) || '';
@@ -243,54 +240,33 @@ function setSyncStatus(t){
   el.textContent = `${hasGist()?'☁':'💾'} ${t}`;
 }
 
-function getNotionBase(){
-  const saved = (localStorage.getItem(NOTION_BASE_KEY) || '').trim();
-  if(saved) return saved.replace(/\/$/, '');
-  if(location.protocol.startsWith('http')) return location.origin;
-  return 'http://localhost:8787';
-}
-
-function setNotionStatus(t, color){
-  const el = document.getElementById('notionStatus'); if(!el) return;
-  el.textContent = t ? `📝 ${t}` : '';
-  el.style.color = color || 'var(--muted)';
-}
-
-async function notionPost(path, payload){
-  let response;
-  try{
-    response = await fetch(getNotionBase()+path, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-  }catch(e){
-    throw new Error('local server unavailable. Run `npm start` to enable Notion sync.');
-  }
-  let data = {};
-  try{ data = await response.json(); }catch{}
-  if(!response.ok || data.ok === false){
-    throw new Error(data.error || `HTTP ${response.status}`);
-  }
-  return data;
-}
 
 async function gistFetchFile(){
-  const r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
-    headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json'}
-  });
-  if(!r.ok) throw new Error('GET '+r.status);
+  let r;
+  try{
+    r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
+      headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json'}
+    });
+  }catch{ throw new Error('sem conexão com o GitHub') }
+  if(r.status===401) throw new Error('token inválido ou expirado — reconfigure o sync');
+  if(r.status===404) throw new Error('Gist não encontrado — verifique o ID');
+  if(!r.ok) throw new Error(`GitHub retornou ${r.status}`);
   const d = await r.json();
   return d.files[GIST_FILE]?.content || null;
 }
 
 async function gistSave(json){
-  const r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
-    method:'PATCH',
-    headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},
-    body: JSON.stringify({files:{[GIST_FILE]:{content:json}}})
-  });
-  if(!r.ok) throw new Error('PATCH '+r.status);
+  let r;
+  try{
+    r = await fetch(`https://api.github.com/gists/${getGistId()}`,{
+      method:'PATCH',
+      headers:{Authorization:`token ${getToken()}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+      body: JSON.stringify({files:{[GIST_FILE]:{content:json}}})
+    });
+  }catch{ throw new Error('sem conexão com o GitHub') }
+  if(r.status===401) throw new Error('token inválido ou expirado — reconfigure o sync');
+  if(r.status===404) throw new Error('Gist não encontrado — verifique o ID');
+  if(!r.ok) throw new Error(`GitHub retornou ${r.status}`);
 }
 
 function persist(){
@@ -725,21 +701,6 @@ $('#importFile').addEventListener('change', async e=>{
   }
 });
 
-$('#notionBtn').addEventListener('click', async ()=>{
-  setNotionStatus('syncing…', '#f7d36e');
-  try{
-    const data = await notionPost('/api/notion/sprint/sync', {state});
-    state = data.state;
-    save();
-    renderAll();
-    setNotionStatus('synced', '#a5d6a7');
-    const summary = data.summary || {};
-    alert(`Sprint synced to Notion.\n\n${summary.sprints||0} sprints · ${summary.epics||0} epics · ${summary.tasks||0} tasks`);
-  }catch(e){
-    setNotionStatus('error', '#f2aaaa');
-    alert('Notion sync failed: ' + e.message);
-  }
-});
 
 // ────── Keyboard shortcuts ──────
 window.addEventListener('keydown', e=>{
