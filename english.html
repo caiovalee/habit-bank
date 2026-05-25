@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#2563eb">
+<title>English QA — Caio</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --tp: #111827; --ts: #4b5563; --tt: #9ca3af;
+  --bp: #ffffff; --bs: #f9fafb; --bt: #f3f4f6;
+  --br: #e5e7eb; --brl: #d1d5db;
+  --danger-bg: #fef2f2; --danger-tx: #dc2626; --danger-bd: #fca5a5;
+  --warn-bg:   #fffbeb; --warn-tx:   #d97706; --warn-bd:   #fcd34d;
+  --info-bg:   #eff6ff; --info-tx:   #2563eb; --info-bd:   #93c5fd;
+  --ok-bg:     #f0fdf4; --ok-tx:     #16a34a; --ok-bd:     #86efac;
+  --accent: #2563eb; --accent-h: #1d4ed8;
+  --rad-lg: 14px; --rad-md: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tp: #f9fafb; --ts: #9ca3af; --tt: #6b7280;
+    --bp: #111827; --bs: #1f2937; --bt: #374151;
+    --br: #374151; --brl: #4b5563;
+    --danger-bg: #1f0a0a; --danger-tx: #f87171; --danger-bd: #7f1d1d;
+    --warn-bg:   #1a1200; --warn-tx:   #fbbf24; --warn-bd:   #78350f;
+    --info-bg:   #0f1e3d; --info-tx:   #60a5fa; --info-bd:   #1e40af;
+    --ok-bg:     #052e16; --ok-tx:     #4ade80; --ok-bd:     #14532d;
+    --accent: #3b82f6; --accent-h: #60a5fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body { font-family: var(--font); background: var(--bs); color: var(--tp); min-height: 100dvh; }
+
+/* ── APP SHELL ── */
+.app { max-width: 620px; margin: 0 auto; background: var(--bp); min-height: 100dvh; display: flex; flex-direction: column; }
+
+/* ── NAV ── */
+.nav { display: flex; border-bottom: 1px solid var(--br); background: var(--bp); position: sticky; top: 0; z-index: 10; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn { flex: 1; min-width: 72px; padding: 14px 6px; font-size: 13px; font-weight: 600; border: none; background: none; color: var(--ts); cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--font); white-space: nowrap; min-height: 50px; transition: color .15s; letter-spacing: .01em; }
+.nav-btn.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; flex: 1; }
+.page.on { display: block; }
+
+/* ── CARDS ── */
+.card { background: var(--bp); border: 1px solid var(--br); border-radius: var(--rad-lg); margin-bottom: 12px; overflow: hidden; }
+.card-head { padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; user-select: none; }
+.chl { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.ct { font-size: 15px; font-weight: 600; }
+.cs { font-size: 13px; color: var(--ts); }
+.card-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--br); }
+.card-body.open { display: block; }
+.chev { font-size: 18px; color: var(--tt); transition: transform .2s; flex-shrink: 0; margin-top: 1px; }
+.chev.open { transform: rotate(180deg); }
+
+/* ── BADGES ── */
+.badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; letter-spacing: .03em; }
+.bd { background: var(--danger-bg); color: var(--danger-tx); }
+.bw { background: var(--warn-bg); color: var(--warn-tx); }
+.bi { background: var(--info-bg); color: var(--info-tx); }
+
+/* ── ERROR/OK BLOCKS ── */
+.ebl { margin-top: 12px; }
+.elb { font-size: 11px; font-weight: 700; color: var(--tt); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.ew { background: var(--danger-bg); border-left: 3px solid var(--danger-tx); padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 14px; color: var(--danger-tx); margin-bottom: 6px; line-height: 1.5; }
+.er { background: var(--ok-bg);     border-left: 3px solid var(--ok-tx);     padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 14px; color: var(--ok-tx);     margin-bottom: 6px; line-height: 1.5; }
+
+/* ── INFO BOXES ── */
+.rb { background: var(--bs); border-radius: var(--rad-md); padding: 12px 14px; font-size: 14px; color: var(--ts); line-height: 1.7; margin-top: 10px; }
+.tb { background: var(--info-bg); border: 1px solid var(--info-bd); border-radius: var(--rad-md); padding: 10px 14px; font-size: 13px; color: var(--info-tx); line-height: 1.5; margin-top: 10px; }
+.qb { background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: var(--rad-md); padding: 10px 14px; font-size: 13px; color: var(--warn-tx); line-height: 1.5; margin-top: 10px; }
+.sl  { font-size: 11px; font-weight: 700; color: var(--tt); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+/* ── SEARCH ── */
+.sw { position: relative; margin-bottom: 12px; }
+.sw i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--tt); pointer-events: none; }
+input[type="text"] { width: 100%; padding: 12px 12px 12px 42px; border-radius: var(--rad-md); border: 1px solid var(--brl); background: var(--bp); color: var(--tp); font-family: var(--font); font-size: 16px; }
+input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+
+/* ── GLOSSARY ── */
+.vi { padding: 13px 0; border-bottom: 1px solid var(--br); }
+.vi:last-child { border-bottom: none; }
+.ve { font-size: 15px; font-weight: 600; }
+.vp { font-size: 13px; color: var(--ts); margin-top: 2px; }
+.vx { font-size: 13px; color: var(--tt); margin-top: 5px; font-style: italic; line-height: 1.5; }
+
+/* ── FILTER CHIPS ── */
+.fr { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.fb { font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--brl); background: none; color: var(--ts); cursor: pointer; font-family: var(--font); min-height: 36px; transition: all .15s; }
+.fb.on { background: var(--info-bg); color: var(--info-tx); border-color: var(--info-bd); }
+
+/* ── TEXTAREA ── */
+textarea { width: 100%; min-height: 100px; resize: vertical; border-radius: var(--rad-md); border: 1px solid var(--brl); padding: 12px 14px; font-size: 16px; font-family: var(--font); color: var(--tp); background: var(--bp); line-height: 1.6; }
+textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+
+/* ── BUTTONS ── */
+button { font-family: var(--font); font-size: 15px; font-weight: 600; cursor: pointer; min-height: 48px; border-radius: var(--rad-md); transition: all .15s; }
+.btn-p { background: var(--accent); color: #fff; border: none; padding: 12px 18px; }
+.btn-p:hover { background: var(--accent-h); }
+.btn-p:active { opacity: .85; }
+.btn-s { background: var(--bs); color: var(--ts); border: 1px solid var(--brl); padding: 12px 18px; }
+.btn-s:hover { background: var(--bt); }
+
+/* ── STATS ── */
+.sc { display: flex; gap: 12px; margin-bottom: 16px; }
+.si { flex: 1; background: var(--bs); border-radius: var(--rad-lg); padding: 14px 8px; text-align: center; border: 1px solid var(--br); }
+.sn { font-size: 28px; font-weight: 700; color: var(--accent); }
+.sl2 { font-size: 11px; color: var(--ts); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ── QUESTION BOX ── */
+.tqc { background: var(--bp); border: 1px solid var(--br); border-radius: var(--rad-lg); padding: 16px; margin-bottom: 12px; }
+.ttb { font-size: 11px; font-weight: 700; background: var(--info-bg); color: var(--info-tx); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 10px; letter-spacing: .05em; }
+.tp { font-size: 15px; font-weight: 600; line-height: 1.6; margin-bottom: 4px; }
+.tc { font-size: 14px; color: var(--ts); line-height: 1.6; margin-top: 8px; padding: 12px 14px; background: var(--bs); border-radius: var(--rad-md); }
+.th { background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: var(--rad-md); padding: 10px 14px; font-size: 13px; color: var(--warn-tx); margin-top: 10px; line-height: 1.5; }
+
+/* ── MC OPTIONS ── */
+.fb2 { width: 100%; text-align: left; padding: 12px 14px; border-radius: var(--rad-md); border: 1px solid var(--brl); background: var(--bp); color: var(--tp); cursor: pointer; font-family: var(--font); font-size: 14px; margin-bottom: 8px; line-height: 1.5; min-height: 48px; transition: all .15s; font-weight: 500; }
+.fb2:hover { background: var(--bs); }
+.fb2.correct { background: var(--ok-bg); border-color: var(--ok-tx); color: var(--ok-tx); font-weight: 700; }
+.fb2.wrong   { background: var(--danger-bg); border-color: var(--danger-tx); color: var(--danger-tx); }
+
+/* ── OUTPUT ── */
+.ao { background: var(--bs); border: 1px solid var(--br); border-radius: var(--rad-lg); padding: 14px 16px; font-size: 14px; color: var(--ts); line-height: 1.8; margin-top: 12px; white-space: pre-wrap; }
+.ao.empty { color: var(--tt); font-style: italic; }
+.ao.ok-out { background: var(--ok-bg); border-color: var(--ok-bd); color: var(--ok-tx); }
+.ao.err-out { background: var(--danger-bg); border-color: var(--danger-bd); color: var(--danger-tx); }
+
+/* ── PRACTICE NOTE ── */
+.pnote { font-size: 14px; color: var(--info-tx); margin-bottom: 14px; line-height: 1.6; padding: 12px 14px; background: var(--info-bg); border-radius: var(--rad-md); border: 1px solid var(--info-bd); }
+.sb { display: flex; gap: 10px; margin-top: 10px; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: #1f2937; color: #fff; padding: 12px 22px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,.35); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 400px) {
+  .sc { gap: 8px; }
+  .si { padding: 10px 6px; }
+  .sn { font-size: 22px; }
+  .nav-btn { font-size: 12px; min-width: 64px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="nav" role="tablist">
+  <button class="nav-btn on" onclick="goTab('learn')"    role="tab" aria-selected="true">Gramática</button>
+  <button class="nav-btn"    onclick="goTab('glossary')" role="tab">Glossário</button>
+  <button class="nav-btn"    onclick="goTab('practice')" role="tab">Praticar</button>
+  <button class="nav-btn"    onclick="goTab('test')"     role="tab">Teste</button>
+</nav>
+
+<!-- ═══ GRAMMAR ═══ -->
+<div id="learn" class="page on">
+<p class="sl">Clique para expandir cada regra</p>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bd">Muito frequente</span><span class="ct">Verbos irregulares no passado</span><span class="cs">find→found, build→built, break→broke...</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado</div>
+      <div class="ew">❌ "I finded a critical bug in the checkout flow."</div>
+      <div class="ew">❌ "We builded the automation suite from scratch."</div>
+      <div class="ew">❌ "The deploy breaked the staging environment."</div>
+    </div>
+    <div class="ebl"><div class="elb">Correto</div>
+      <div class="er">✅ "I found a critical bug in the checkout flow."</div>
+      <div class="er">✅ "We built the automation suite from scratch."</div>
+      <div class="er">✅ "The deploy broke the staging environment."</div>
+    </div>
+    <div class="rb"><strong>Verbos irregulares essenciais em QA:</strong><br><br>
+      find → <strong>found</strong> &nbsp;|&nbsp; build → <strong>built</strong> &nbsp;|&nbsp; break → <strong>broke</strong><br>
+      run → <strong>ran</strong> &nbsp;|&nbsp; write → <strong>wrote</strong> &nbsp;|&nbsp; send → <strong>sent</strong><br>
+      make → <strong>made</strong> &nbsp;|&nbsp; take → <strong>took</strong> &nbsp;|&nbsp; catch → <strong>caught</strong><br>
+      know → <strong>knew</strong> &nbsp;|&nbsp; go → <strong>went</strong> &nbsp;|&nbsp; give → <strong>gave</strong>
+    </div>
+    <div class="tb">💡 Nunca adicione -ed a esses verbos. Se reconhece o verbo, use a forma irregular.</div>
+    <div class="qb">🔧 Daily: "I ran the regression", "We found 3 blockers", "The test broke after the merge."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bd">Muito frequente</span><span class="ct">Present Continuous — am/is/are + -ing</span><span class="cs">Não esqueça o verbo "be"</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado</div>
+      <div class="ew">❌ "I watching a video about Knot Theory."</div>
+      <div class="ew">❌ "The team working on the fix right now."</div>
+    </div>
+    <div class="ebl"><div class="elb">Correto</div>
+      <div class="er">✅ "I'm watching a video about Knot Theory."</div>
+      <div class="er">✅ "The team is working on the fix right now."</div>
+    </div>
+    <div class="rb"><strong>Estrutura obrigatória:</strong> am/is/are + verbo-ing<br><br>
+      I <strong>am (I'm)</strong> testing &nbsp;|&nbsp; He/She <strong>is (he's)</strong> testing &nbsp;|&nbsp; We/They <strong>are (we're)</strong> testing<br><br>
+      Sem am/is/are → frase incompleta e errada.
+    </div>
+    <div class="qb">🔧 Daily: "I'm investigating the timeout", "We're waiting for the dev fix", "The pipeline is running."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bw">Frequente</span><span class="ct">Preposições: in / on / at</span><span class="cs">Ambientes, plataformas e passos</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado vs Correto</div>
+      <div class="ew">❌ "I tested on staging environment."</div>
+      <div class="er">✅ "I tested in the staging environment."</div>
+      <div class="ew">❌ "The bug appeared in Jira."</div>
+      <div class="er">✅ "The bug was reported on Jira."</div>
+      <div class="ew">❌ "The flow breaks on the checkout."</div>
+      <div class="er">✅ "The flow breaks at the checkout step."</div>
+    </div>
+    <div class="rb">
+      <strong>IN</strong> → ambientes/espaços: in production, in staging, in the app, in the database<br><br>
+      <strong>ON</strong> → plataformas: on Jira, on GitHub, on GitLab, on BrowserStack, on mobile<br><br>
+      <strong>AT</strong> → pontos específicos: at the login page, at step 3, at checkout
+    </div>
+    <div class="tb">💡 Mantra: Ambiente = IN. Plataforma = ON. Passo específico = AT.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bw">Frequente</span><span class="ct">Modal verbs — nunca "to" depois</span><span class="cs">can / should / must / might</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado</div>
+      <div class="ew">❌ "You should to run the tests before merging."</div>
+      <div class="ew">❌ "This must to be a regression."</div>
+      <div class="ew">❌ "I can to investigate this tomorrow."</div>
+    </div>
+    <div class="ebl"><div class="elb">Correto</div>
+      <div class="er">✅ "You should run the tests before merging."</div>
+      <div class="er">✅ "This must be a regression."</div>
+      <div class="er">✅ "I can investigate this tomorrow."</div>
+    </div>
+    <div class="rb"><strong>Regra de ouro:</strong> Modal + verbo base — NUNCA "to"<br><br>
+      <strong>can</strong> = consegue → "I can reproduce the bug"<br>
+      <strong>should</strong> = deveria → "You should open a ticket"<br>
+      <strong>must</strong> = obrigatório → "We must deploy before 5pm"<br>
+      <strong>might</strong> = talvez → "This might be a cache issue"<br>
+      <strong>could</strong> = poderia → "It could be a race condition"
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bw">Frequente</span><span class="ct">Will/won't + past participle</span><span class="cs">Futuro passivo: "will be fixed"</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado vs Correto</div>
+      <div class="ew">❌ "The bug won't be fix before the release."</div>
+      <div class="er">✅ "The bug won't be fixed before the release."</div>
+      <div class="ew">❌ "The feature will be deploy on Friday."</div>
+      <div class="er">✅ "The feature will be deployed on Friday."</div>
+    </div>
+    <div class="rb"><strong>Estrutura:</strong> will/won't + be + past participle<br><br>
+      fix → <strong>fixed</strong> &nbsp;|&nbsp; deploy → <strong>deployed</strong> &nbsp;|&nbsp; test → <strong>tested</strong><br>
+      break → <strong>broken</strong> &nbsp;|&nbsp; build → <strong>built</strong> &nbsp;|&nbsp; prepare → <strong>prepared</strong>
+    </div>
+    <div class="tb">💡 Depois de "will be" / "won't be" → sempre particípio. fix→fixed, deploy→deployed.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bi">Dica</span><span class="ct">False cognates — armadilhas clássicas</span><span class="cs">actual, pretend, realize, sympathetic...</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Armadilhas com contexto</div>
+      <div class="ew">❌ "The actual president" → actual = real/genuíno</div>
+      <div class="er">✅ "The current president" → atual = current</div>
+      <div class="ew">❌ "The politics don't care" → politics = área/assunto</div>
+      <div class="er">✅ "Politicians don't care" → políticos = politicians</div>
+      <div class="ew">❌ "Renew my signature" → signature = nome assinado</div>
+      <div class="er">✅ "Renew my subscription" → assinatura de serviço</div>
+    </div>
+    <div class="rb">
+      atual → <strong>current</strong> &nbsp;|&nbsp; simpático → <strong>nice/friendly</strong><br>
+      pretender → <strong>intend/plan</strong> &nbsp;|&nbsp; realizar → <strong>achieve/accomplish</strong><br>
+      polêmico → <strong>controversial</strong> &nbsp;|&nbsp; políticos → <strong>politicians</strong>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head" onclick="tog(this)">
+    <div class="chl"><span class="badge bi">Dica</span><span class="ct">Adjetivos — posição e adverbs</span><span class="cs">Ordem e modificação correta</span></div>
+    <i class="ti ti-chevron-down chev"></i>
+  </div>
+  <div class="card-body">
+    <div class="ebl"><div class="elb">Errado vs Correto</div>
+      <div class="ew">❌ "The state brazilian needs reform."</div>
+      <div class="er">✅ "The Brazilian state needs reform."</div>
+      <div class="ew">❌ "This is extreme important for the release."</div>
+      <div class="er">✅ "This is extremely important for the release."</div>
+    </div>
+    <div class="rb">
+      <strong>Posição:</strong> adjetivo ANTES do substantivo em inglês.<br>
+      ❌ "a bug critical" → ✅ "a critical bug"<br>
+      ❌ "an environment unstable" → ✅ "an unstable environment"<br><br>
+      <strong>Adverb:</strong> para modificar adjetivo, adicione -ly:<br>
+      extreme → <strong>extremely</strong> &nbsp;|&nbsp; incredible → <strong>incredibly</strong> &nbsp;|&nbsp; total → <strong>totally</strong>
+    </div>
+  </div>
+</div>
+</div><!-- /learn -->
+
+<!-- ═══ GLOSSARY ═══ -->
+<div id="glossary" class="page">
+  <div class="sw">
+    <i class="ti ti-search"></i>
+    <input type="text" id="gs" placeholder="Buscar em inglês ou português..." oninput="fG()">
+  </div>
+  <div class="fr" id="gcat">
+    <button class="fb on" onclick="sC('all',this)">Todos</button>
+    <button class="fb" onclick="sC('qa',this)">QA</button>
+    <button class="fb" onclick="sC('pv',this)">Phrasal verbs</button>
+    <button class="fb" onclick="sC('fc',this)">False cognates</button>
+  </div>
+  <div id="gl"></div>
+</div>
+
+<!-- ═══ PRACTICE ═══ -->
+<div id="practice" class="page">
+  <p class="sl">Escreva em inglês — copie e cole no Claude para correção</p>
+  <div class="pnote">
+    <i class="ti ti-info-circle" style="font-size:16px;vertical-align:-2px;margin-right:4px"></i>
+    Escreva seu texto, clique em <strong>"Copiar para Claude"</strong> e cole no chat do Claude. Vou corrigir com explicações detalhadas.
+  </div>
+  <textarea id="pi" placeholder="Example: Yesterday I was investigate a bug in the staging environment and I finded that the login flow is broken because the developer did changed the API endpoint..."></textarea>
+  <div class="sb">
+    <button class="btn-p" style="flex:1" onclick="sendPractice()">Copiar para Claude ↗</button>
+    <button class="btn-s" style="flex:0 0 auto;padding:0 16px" onclick="clearP()"><i class="ti ti-trash"></i></button>
+  </div>
+  <p style="font-size:12px;color:var(--tt);margin-top:10px;line-height:1.5">Depois de copiar, abra o Claude e cole o texto copiado na conversa.</p>
+</div>
+
+<!-- ═══ TEST ═══ -->
+<div id="test" class="page">
+  <div class="sc">
+    <div class="si"><div class="sn" id="sc1">0</div><div class="sl2">Corretas</div></div>
+    <div class="si"><div class="sn" id="sc2">0</div><div class="sl2">Tentativas</div></div>
+    <div class="si"><div class="sn" id="sc3">—</div><div class="sl2">Acerto</div></div>
+  </div>
+
+  <div class="tqc" id="tqc">
+    <div class="ttb" id="tt"></div>
+    <div class="tp"  id="tpr"></div>
+    <div id="tcw" style="display:none"><div class="tc" id="tc"></div></div>
+    <div id="thw" style="display:none"><div class="th" id="thi"></div></div>
+    <div id="opts" style="margin-top:12px;display:none"></div>
+  </div>
+
+  <div id="open-wrap" style="display:none">
+    <textarea id="ti" placeholder="Digite sua resposta aqui..." style="margin-bottom:0"></textarea>
+    <div class="sb">
+      <button class="btn-p" style="flex:1" onclick="checkOpen()">Verificar</button>
+      <button class="btn-s" style="flex:0 0 auto;padding:0 16px" onclick="nextQ()"><i class="ti ti-refresh"></i></button>
+    </div>
+  </div>
+  <div id="mc-nav" style="display:none;margin-top:10px">
+    <button class="btn-s" style="width:100%" onclick="nextQ()"><i class="ti ti-refresh"></i> Nova pergunta</button>
+  </div>
+
+  <div id="to" class="ao empty">A correção vai aparecer aqui...</div>
+</div>
+
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── DATA ── */
+const GL=[
+  {en:"staging environment",pt:"homologação",ex:"Always test in the staging environment before deploying to production.",cat:"qa"},
+  {en:"production environment",pt:"produção",ex:"A critical bug was found in the production environment after the deploy.",cat:"qa"},
+  {en:"test case",pt:"caso de teste",ex:"I wrote 15 test cases covering the entire checkout flow.",cat:"qa"},
+  {en:"root cause",pt:"causa raiz",ex:"It took two hours to track down the root cause of the failure.",cat:"qa"},
+  {en:"regression",pt:"regressão",ex:"After the merge, we ran a full regression to check for broken flows.",cat:"qa"},
+  {en:"blocker",pt:"impedimento / bloqueio",ex:"There's a blocker in the payment flow — we can't release today.",cat:"qa"},
+  {en:"smoke test",pt:"teste de fumaça / básico",ex:"Run a quick smoke test after every deploy to catch obvious issues.",cat:"qa"},
+  {en:"flaky test",pt:"teste instável",ex:"This test is flaky — it passes sometimes and fails randomly.",cat:"qa"},
+  {en:"edge case",pt:"caso extremo",ex:"Don't forget to test edge cases like empty fields and special characters.",cat:"qa"},
+  {en:"acceptance criteria",pt:"critérios de aceite",ex:"Always read the acceptance criteria in the ticket before writing test cases.",cat:"qa"},
+  {en:"test coverage",pt:"cobertura de testes",ex:"We need at least 80% test coverage before the release.",cat:"qa"},
+  {en:"deploy",pt:"publicar / subir para produção",ex:"The team will deploy the fix to production on Friday evening.",cat:"qa"},
+  {en:"bug report",pt:"relatório de bug",ex:"A good bug report includes steps to reproduce, expected vs actual behavior.",cat:"qa"},
+  {en:"daily meeting / standup",pt:"reunião diária",ex:"In the daily, I said I was blocked by a missing API key.",cat:"qa"},
+  {en:"roll back",pt:"reverter",ex:"We had to roll back the release because it broke the login flow.",cat:"pv"},
+  {en:"look into",pt:"investigar / verificar",ex:"I'll look into the API timeout issue right after the daily.",cat:"pv"},
+  {en:"set up",pt:"configurar / preparar",ex:"Can you set up the local environment before tomorrow's session?",cat:"pv"},
+  {en:"run into",pt:"encontrar problema inesperado",ex:"We ran into a critical issue when running the smoke tests.",cat:"pv"},
+  {en:"break down",pt:"parar de funcionar",ex:"The CI pipeline broke down after the latest dependency update.",cat:"pv"},
+  {en:"sign off",pt:"aprovar / dar ok",ex:"The tech lead signed off on the test plan before the sprint.",cat:"pv"},
+  {en:"hand off",pt:"passar para outra pessoa",ex:"I'll hand off this investigation to the backend team.",cat:"pv"},
+  {en:"track down",pt:"rastrear / encontrar a causa",ex:"It took an hour to track down the root cause of the failure.",cat:"pv"},
+  {en:"log in / log out",pt:"entrar / sair do sistema",ex:"I couldn't log in to the staging environment — wrong credentials.",cat:"pv"},
+  {en:"open up",pt:"abrir (ticket, PR, arquivo)",ex:"Let me open up the Jira ticket and check the details.",cat:"pv"},
+  {en:"current",pt:"atual — NÃO 'actual' (= real/genuíno)",ex:"The current president doesn't have a visible climate plan.",cat:"fc"},
+  {en:"subscription",pt:"assinatura de serviço — NÃO 'signature'",ex:"My Netflix subscription expires next month.",cat:"fc"},
+  {en:"pretend",pt:"fingir — NÃO usar para 'pretender' (= intend)",ex:"Don't pretend you didn't see the bug in the report.",cat:"fc"},
+  {en:"realize",pt:"perceber/entender — NÃO 'realizar algo' (= achieve)",ex:"I realized the test was failing because of a wrong selector.",cat:"fc"},
+  {en:"achieve / accomplish",pt:"realizar/alcançar",ex:"We achieved full test coverage for the checkout module.",cat:"fc"},
+  {en:"controversial",pt:"polêmico — NÃO 'polemic'",ex:"The decision to skip regression was controversial.",cat:"fc"},
+  {en:"politicians",pt:"políticos — NÃO 'politics' (= área/assunto)",ex:"Politicians don't care about structural problems.",cat:"fc"},
+  {en:"nice / friendly",pt:"simpático — NÃO 'sympathetic' (= compassivo)",ex:"She's very nice and always helps the team.",cat:"fc"}
+];
+
+const QS=[
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Eu encontrei um bug crítico no fluxo de login ontem à noite.',hint:'Use Simple Past. "Encontrei" = verbo irregular! find→?',ans:'I found a critical bug in the login flow last night.',topic:'irregular_past'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'O time está trabalhando no fix agora.',hint:'Ação em progresso agora = Present Continuous (am/is/are + -ing)',ans:'The team is working on the fix right now.',topic:'continuous'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Você deveria abrir um ticket antes de fazer o merge.',hint:'Conselho = should. Depois de should nunca use "to"!',ans:'You should open a ticket before merging.',topic:'modal'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'O bug não vai ser corrigido antes do release.',hint:"Futuro passivo = won't be + particípio. fix→?",ans:"The bug won't be fixed before the release.",topic:'will_passive'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Eu não consegui entrar no ambiente de homologação.',hint:'"Entrar no sistema" = log in. Ambiente = in (not on)',ans:"I couldn't log in to the staging environment.",topic:'modal'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'O presidente atual não tem um plano visível.',hint:'"Atual" NÃO é "actual"! Actual = real/genuine. Atual = ?',ans:"The current president doesn't have a visible plan.",topic:'false_cognate'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Nós revertemos o deploy porque quebrou o fluxo de pagamento.',hint:'Revertemos = rolled back. Quebrou = verbo irregular break→?',ans:'We rolled back the deploy because it broke the payment flow.',topic:'irregular_past'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Talvez esse seja um problema de cache.',hint:'Talvez = might. Depois de might nunca use "to"!',ans:'This might be a cache issue.',topic:'modal'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Estou investigando o timeout da API agora.',hint:'Present Continuous! "Investigar" como phrasal verb = look into',ans:"I'm looking into the API timeout right now.",topic:'continuous'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Os políticos não veem os problemas estruturais.',hint:'"Políticos" NÃO é "politics"! Politics = o assunto/área. Políticos = ?',ans:"Politicians don't see the structural problems.",topic:'false_cognate'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'Levei uma hora para rastrear a causa raiz da falha.',hint:'"Rastrear a causa" = phrasal verb: track ___',ans:'It took me an hour to track down the root cause of the failure.',topic:'phrasal'},
+  {type:'TRADUÇÃO',q:'Traduzir para inglês:',ctx:'O tech lead aprovou o plano de testes antes da sprint.',hint:'"Aprovar / dar ok" = phrasal verb: sign ___',ans:'The tech lead signed off on the test plan before the sprint.',topic:'phrasal'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'Yesterday I was investigate a bug in the staging environment.',hint:'Ação passada em progresso = was/were + -ing (past continuous)',ans:'Yesterday I was investigating a bug in the staging environment.',topic:'continuous'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'The feature will be deploy on Friday morning.',hint:'Depois de "will be" → particípio passado. deploy→?',ans:'The feature will be deployed on Friday morning.',topic:'will_passive'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'I finded the root cause after two hours of investigation.',hint:'find é irregular! find → ?',ans:'I found the root cause after two hours of investigation.',topic:'irregular_past'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'You should to run the tests before merging the branch.',hint:'Modal verbs nunca são seguidos de "to"!',ans:'You should run the tests before merging the branch.',topic:'modal'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'I tested the new feature on staging environment yesterday.',hint:'Ambiente = espaço = IN, não ON.',ans:'I tested the new feature in the staging environment yesterday.',topic:'preposition'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'The actual version of the app has a critical bug.',hint:'"Actual" em inglês = real/genuíno, não "atual". Atual = ?',ans:'The current version of the app has a critical bug.',topic:'false_cognate'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'We did found a regression after the last deploy.',hint:'"Did" em frases afirmativas normais não existe. Use só o verbo no passado.',ans:'We found a regression after the last deploy.',topic:'irregular_past'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'She is a engineer incredible who never misses a bug.',hint:'Dois erros: artigo antes de vogal + ordem do adjetivo.',ans:'She is an incredible engineer who never misses a bug.',topic:'article'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'The test breaked because of a configuration problem.',hint:'break é irregular! break → ?',ans:'The test broke because of a configuration problem.',topic:'irregular_past'},
+  {type:'CORRIGIR ERRO',q:'Encontre e corrija o(s) erro(s):',ctx:'The bug was reported in GitHub by the developer.',hint:'GitHub é uma plataforma = superfície. Use ON, não IN.',ans:'The bug was reported on GitHub by the developer.',topic:'preposition'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'I ___ a critical bug in production last night.',opts:['a) finded','b) found','c) have find'],ans:'b) found',hint:'Simple Past de "find" é irregular.',topic:'irregular_past'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'The team ___ on the fix right now.',opts:['a) is working','b) working','c) works'],ans:'a) is working',hint:'Ação em progresso agora = Present Continuous (is/are + -ing).',topic:'continuous'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'You ___ open a ticket before merging.',opts:['a) should to','b) should','c) shoulds'],ans:'b) should',hint:'Modal verbs nunca têm "to" depois.',topic:'modal'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'The bug will be ___ before the release.',opts:['a) fix','b) fixing','c) fixed'],ans:'c) fixed',hint:'Depois de "will be" → past participle.',topic:'will_passive'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'I tested the feature ___ the staging environment.',opts:['a) on','b) at','c) in'],ans:'c) in',hint:'Ambiente de software = espaço → preposição IN.',topic:'preposition'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'___ took me an hour to track down the root cause.',opts:['a) This','b) It','c) That thing'],ans:'b) It',hint:'"It" é usado como sujeito impessoal para tempo e situações.',topic:'pronoun'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:"The ___ president doesn't have a plan for the environment.",opts:['a) actual','b) current','c) now'],ans:'b) current',hint:'"Atual" em inglês = current. "Actual" = real/genuine — false cognate!',topic:'false_cognate'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'This ___ be a cache issue — let me check the logs.',opts:['a) might','b) might to','c) mights'],ans:'a) might',hint:'Modal verbs não se conjugam e nunca têm "to" depois.',topic:'modal'},
+  {type:'COMPLETE A FRASE',q:'Escolha a opção correta:',ctx:'We need ___ open a ticket for this bug.',opts:['a) to','b) for','c) —'],ans:'a) to',hint:'need + to + verb infinitive. Diferente de modais!',topic:'modal'},
+  {type:'DAILY MEETING',q:'Responda como QA Engineer:',ctx:"It's your turn in the daily. Yesterday you found a bug in the payment flow and are now waiting for the developer to fix it. What do you say?",hint:'Use Simple Past (found) + Present Continuous (I\'m waiting). Keep it short.',ans:"Yesterday I found a bug in the payment flow. I'm waiting for the developer to fix it. No blockers for today.",topic:'daily'},
+  {type:'DAILY MEETING',q:'Responda como QA Engineer:',ctx:'In the daily, your manager asks: "Did you finish the regression testing?" — You ran it but found 2 failures. What do you say?',hint:'Use Simple Past. "Ran" = past of run.',ans:"I ran the full regression yesterday. I found 2 failures — I already opened tickets for both. I'll investigate the root cause today.",topic:'daily'},
+  {type:'DAILY MEETING',q:'Responda como QA Engineer:',ctx:"Report a blocker: the staging environment has been down since yesterday and you can't test the new feature.",hint:'Use Present Perfect (has been) for something that started in the past and continues.',ans:"I have a blocker. The staging environment has been down since yesterday, so I can't test the new feature. We should roll back or set up a new environment.",topic:'daily'},
+];
+
+/* ── GLOSSARY ── */
+let cat='all';
+function rG(items){
+  const el=document.getElementById('gl');
+  if(!items.length){el.innerHTML='<p style="color:var(--tt);font-size:14px;text-align:center;padding:24px 0">Nenhum resultado.</p>';return;}
+  el.innerHTML=items.map(i=>`<div class="vi"><div class="ve">${i.en}</div><div class="vp">${i.pt}</div><div class="vx">${i.ex}</div></div>`).join('');
+}
+function fG(){
+  const q=document.getElementById('gs').value.toLowerCase();
+  let it=GL;
+  if(cat!=='all')it=it.filter(i=>i.cat===cat);
+  if(q)it=it.filter(i=>i.en.toLowerCase().includes(q)||i.pt.toLowerCase().includes(q));
+  rG(it);
+}
+function sC(c,btn){
+  cat=c;
+  document.querySelectorAll('#gcat .fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  fG();
+}
+rG(GL);
+
+/* ── NAV ── */
+function goTab(id){
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    b.classList.toggle('on',['learn','glossary','practice','test'][i]===id);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===id));
+  if(id==='test'&&!qLoaded)loadQ();
+}
+function tog(head){
+  const b=head.nextElementSibling,c=head.querySelector('.chev'),o=b.classList.contains('open');
+  b.classList.toggle('open',!o);c.classList.toggle('open',!o);
+}
+
+/* ── PRACTICE ── */
+function sendPractice(){
+  const t=document.getElementById('pi').value.trim();
+  if(!t){showToast('Escreva algo primeiro!');return;}
+  const prompt='Corrija o inglês abaixo. Mostre a versão corrigida primeiro, depois liste até 4 erros com a regra explicada em português. Finalize com um desafio de tradução.\n\nTexto:\n"'+t+'"';
+  copyText(prompt,'Prompt copiado! Cole no Claude ↗');
+}
+function clearP(){document.getElementById('pi').value='';}
+
+/* ── TEST ── */
+let qi=null,qLoaded=false,scores={c:0,t:0};
+const used=new Set();
+
+function loadQ(){qLoaded=true;nextQ();}
+
+function nextQ(){
+  document.getElementById('to').className='ao empty';
+  document.getElementById('to').textContent='A correção vai aparecer aqui...';
+  document.getElementById('open-wrap').style.display='none';
+  document.getElementById('mc-nav').style.display='none';
+  document.getElementById('opts').style.display='none';
+  const ti=document.getElementById('ti');if(ti)ti.value='';
+
+  let avail=QS.map((_,i)=>i).filter(i=>!used.has(i));
+  if(!avail.length){used.clear();avail=QS.map((_,i)=>i);}
+  const idx=avail[Math.floor(Math.random()*avail.length)];
+  used.add(idx);qi=QS[idx];
+
+  document.getElementById('tt').textContent=qi.type;
+  document.getElementById('tpr').textContent=qi.q;
+  if(qi.ctx){document.getElementById('tc').textContent=qi.ctx;document.getElementById('tcw').style.display='block';}
+  else{document.getElementById('tcw').style.display='none';}
+  if(qi.hint){document.getElementById('thi').textContent='💡 '+qi.hint;document.getElementById('thw').style.display='block';}
+  else{document.getElementById('thw').style.display='none';}
+
+  if(qi.type==='COMPLETE A FRASE'&&qi.opts){
+    const ow=document.getElementById('opts');
+    ow.style.display='block';
+    ow.innerHTML=qi.opts.map((o,i)=>`<button class="fb2" onclick="checkMC(${i})">${o}</button>`).join('');
+    document.getElementById('mc-nav').style.display='block';
+  } else {
+    document.getElementById('open-wrap').style.display='block';
+  }
+}
+
+function checkMC(i){
+  const sel=qi.opts[i];
+  const correct=sel===qi.ans;
+  scores.t++;if(correct)scores.c++;
+  updateScore();
+  document.querySelectorAll('#opts .fb2').forEach((b,j)=>{
+    b.disabled=true;
+    if(qi.opts[j]===qi.ans)b.className='fb2 correct';
+    else if(j===i&&!correct)b.className='fb2 wrong';
+  });
+  const out=document.getElementById('to');
+  out.className=correct?'ao ok-out':'ao err-out';
+  out.textContent=correct
+    ?'✅ CORRETO!\n\nResposta: '+qi.ans+'\n\n📖 Regra: '+qi.hint
+    :'❌ INCORRETO\n\nResposta certa: '+qi.ans+'\n\n📖 Por que? '+qi.hint;
+}
+
+function checkOpen(){
+  const ans=document.getElementById('ti').value.trim();
+  if(!ans){showToast('Escreva sua resposta!');return;}
+  scores.t++;
+  updateScore();
+  const out=document.getElementById('to');
+  const ua=ans.toLowerCase().replace(/[.,!?'"]/g,'').trim();
+  const ca=qi.ans.toLowerCase().replace(/[.,!?'"]/g,'').trim();
+  const perfect=ua===ca||(ca.includes(ua)&&ua.length>10);
+  if(perfect){
+    scores.c++;updateScore();
+    out.className='ao ok-out';
+    out.textContent='✅ PERFEITO!\n\nSua resposta: "'+ans+'"\nResposta modelo: "'+qi.ans+'"\n\n📖 '+qi.hint;
+  } else {
+    out.className='ao err-out';
+    out.textContent='📝 Resposta modelo:\n"'+qi.ans+'"\n\n📖 Dica: '+qi.hint+'\n\nCompare sua resposta com o modelo acima e tente entender a diferença.';
+  }
+}
+
+function updateScore(){
+  document.getElementById('sc1').textContent=scores.c;
+  document.getElementById('sc2').textContent=scores.t;
+  document.getElementById('sc3').textContent=Math.round((scores.c/scores.t)*100)+'%';
+}
+
+/* ── UTILS ── */
+function copyText(text,msg){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>showToast(msg||'Copiado!')).catch(()=>fallbackCopy(text,msg));
+  } else {fallbackCopy(text,msg);}
+}
+function fallbackCopy(text,msg){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast(msg||'Copiado!');}catch{}
+  document.body.removeChild(ta);
+}
+
+let toastTimer;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
