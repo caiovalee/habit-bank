@@ -45,6 +45,8 @@ body { font-family: var(--font); background: var(--bs); color: var(--tp); min-he
 .nav::-webkit-scrollbar { display: none; }
 .nav-btn { flex: 1; min-width: 72px; padding: 14px 6px; font-size: 13px; font-weight: 600; border: none; background: none; color: var(--ts); cursor: pointer; border-bottom: 2px solid transparent; font-family: var(--font); white-space: nowrap; min-height: 50px; transition: color .15s; letter-spacing: .01em; }
 .nav-btn.on { color: var(--accent); border-bottom-color: var(--accent); }
+.nav-home { display: flex; align-items: center; justify-content: center; padding: 0 14px; font-size: 17px; text-decoration: none; color: var(--ts); border-right: 1px solid var(--br); min-height: 50px; flex-shrink: 0; transition: color .15s; }
+.nav-home:hover { color: var(--tp); }
 
 /* ── PAGES ── */
 .page { display: none; padding: 16px; flex: 1; }
@@ -155,6 +157,7 @@ button { font-family: var(--font); font-size: 15px; font-weight: 600; cursor: po
 <div class="app">
 
 <nav class="nav" role="tablist">
+  <a href="./index.html" class="nav-home" title="Início" aria-label="Início">🏠</a>
   <button class="nav-btn on" onclick="goTab('learn')"    role="tab" aria-selected="true">Gramática</button>
   <button class="nav-btn"    onclick="goTab('glossary')" role="tab">Glossário</button>
   <button class="nav-btn"    onclick="goTab('practice')" role="tab">Praticar</button>
