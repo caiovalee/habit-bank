@@ -28,8 +28,8 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
-    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-      return serveFile(res, "index.html", "text/html; charset=utf-8");
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home.html")) {
+      return serveFile(res, "home.html", "text/html; charset=utf-8");
     }
     if (req.method === "GET" && url.pathname === "/habitbank.html") {
       return serveFile(res, "habitbank.html", "text/html; charset=utf-8");
